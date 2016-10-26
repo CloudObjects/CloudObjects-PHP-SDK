@@ -29,7 +29,8 @@ class ObjectRetriever {
 			'cache_ttl_attachments' => 0,
 			'static_config_path' => null,
 			'user' => null,
-			'password' => null
+			'password' => null,
+			'api_base_url' => null 
 		), $options);
 
 		// Set up object cache
@@ -60,7 +61,7 @@ class ObjectRetriever {
 
 		// Initialize client
 		$this->client = new Client(array(
-			'base_url' => self::CO_API_URL
+			'base_url' => isset($options['api_base_url']) ? $options['api_base_url'] : self::CO_API_URL
 		));
 	}
 
