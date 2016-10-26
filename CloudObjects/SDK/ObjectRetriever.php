@@ -4,7 +4,7 @@ namespace CloudObjects\SDK;
 
 use ML\IRI\IRI, ML\JsonLD\JsonLD, ML\JsonLD\NQuads;
 use Doctrine\Common\Cache\RedisCache;
-use GuzzleHttp\Client;
+use GuzzleHttp\ClientInterface, GuzzleHttp\Client;
 
 /**
  * The ObjectRetriever provides access to objects on CloudObjects.
@@ -28,9 +28,9 @@ class ObjectRetriever {
 			'cache_ttl' => 60,
 			'cache_ttl_attachments' => 0,
 			'static_config_path' => null,
-			'user' => null,
+			'auth_ns' => null,
 			'password' => null,
-			'api_base_url' => null 
+			'api_base_url' => null
 		), $options);
 
 		// Set up object cache
@@ -60,9 +60,14 @@ class ObjectRetriever {
 		}
 
 		// Initialize client
-		$this->client = new Client(array(
-			'base_url' => isset($options['api_base_url']) ? $options['api_base_url'] : self::CO_API_URL
-		));
+		$options = [
+			'base_uri' => isset($options['api_base_url']) ? $options['api_base_url'] : self::CO_API_URL
+		];
+		
+		if (isset($this->options['auth_ns']) && isset($this->options['auth_secret']))
+			$options['auth'] = [$this->options['auth_ns'], $this->options['auth_secret']];
+
+		$this->client = new Client($options);
 	}
 
 	private function getFromCache($id) {
@@ -73,6 +78,20 @@ class ObjectRetriever {
 	private function putIntoCache($id, $data, $ttl) {
 		if (isset($this->cache))
 			$this->cache->save($this->options['cache_prefix'].$id, $data, $ttl);
+	}
+
+	/**
+	 * Get the HTTP client that is used to access the API.
+	 */
+	public function getClient() {
+		return $this->client;
+	}
+
+	/**
+	 * Set the HTTP client that is used to access the API.
+	 */
+	public function setClient(ClientInterface $client) {
+		$this->client = $client;
 	}
 
 	/**
@@ -105,17 +124,11 @@ class ObjectRetriever {
 
 		if (!isset($object)) {
 			try {
-				$request = $this->client
-					->createRequest('GET', '/'.$coid->getHost().$coid->getPath().'/object',
-						array('headers' => array(
-							'Accept' => 'application/ld+json')
-						));
+				$response = $this->client
+					->get('/'.$coid->getHost().$coid->getPath().'/object',
+						['headers' => ['Accept' => 'application/ld+json']]);
 
-				if (isset($this->options['user']) && isset($this->options['password'])) {
-					$request->setAuth($this->options['user'], $this->options['password']);
-				}
-
-				$object = (string)$this->client->send($request)->getBody();
+				$object = (string)$response->getBody();
 				$this->putIntoCache($uriString, $object, $this->options['cache_ttl']);
 			} catch (\Exception $e) {
 				return null;
@@ -170,10 +183,6 @@ class ObjectRetriever {
 			try {
 				$request = $this->client->get('/'.$coid->getHost().$coid->getPath()
 					.'/'.basename($filename));
-
-				if (isset($this->options['user']) && isset($this->options['password'])) {
-					$request->setAuth($this->options['user'], $this->options['password']);
-				}
 
 				$fileContent = $request->send()->getBody(true);
 				$fileData = $object->getProperty(self::REVISION_PROPERTY)->getValue().'#'.$fileContent;
