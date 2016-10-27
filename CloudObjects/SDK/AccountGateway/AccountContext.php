@@ -5,7 +5,7 @@ namespace CloudObjects\SDK\AccountGateway;
 use ML\IRI\IRI;
 use ML\JsonLD\Document, ML\JsonLD\JsonLD, ML\JsonLD\NQuads;
 use Symfony\Component\HttpFoundation\Request, Symfony\Component\HttpFoundation\Response;
-use GuzzleHttp\Client, GuzzleHttp\HandlerStack, GuzzleHttp\Handler\CurlHandler, GuzzleHttp\Middleware;
+use GuzzleHttp\Client, GuzzleHttp\HandlerStack, GuzzleHttp\Middleware;
 use Psr\Http\Message\ResponseInterface;
 
 /**
@@ -237,8 +237,7 @@ class AccountContext {
 	public function getClient() {
 		if (!$this->client) {
 			// Create custom handler stack with middlewares
-			$stack = new HandlerStack();
-			$stack->setHandler(new CurlHandler());
+			$stack = HandlerStack::create();
 
 			$context = $this;
 			$stack->push(Middleware::mapResponse(function (ResponseInterface $response) use ($context) {
