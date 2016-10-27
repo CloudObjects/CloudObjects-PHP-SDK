@@ -15,6 +15,19 @@ class AAUIDParser {
   const REGEX_AAUID = "/^[a-z0-9]{16}$/";
   const REGEX_QUALIFIER = "/^[A-Z]{2}$/";
 
+  /**
+   * Creates a new IRI object representing a AAUID from a string.
+   * Adds the "aauid:" prefix if necessary.
+   *
+   * @param string $aauidString An AAUID string.
+   * @return IRI
+   */
+  public static function fromString($aauidString) {
+    return new IRI(
+      (substr($aauidString, 0, 6)=='aauid:') ? $aauidString : 'aauid:'.$aauidString
+    );
+  }
+
   public static function getType(IRI $iri) {
     if ($iri->getScheme()!='aauid' || $iri->getPath()=='')
       return self::AAUID_INVALID;

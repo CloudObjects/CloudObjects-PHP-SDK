@@ -46,4 +46,14 @@ class AAUIDParserTest extends \PHPUnit_Framework_TestCase {
     $this->assertNull(AAUIDParser::getQualifier($aauid));
   }
 
+  public function testFromStringValid() {
+    $aauid1 = new IRI('aauid:5678defg8765gfed');
+    $aauid2 = AAUIDParser::fromString('aauid:5678defg8765gfed');
+    $this->assertEquals($aauid1, $aauid2);
+
+    $aauid1 = new IRI('aauid:5678defg8765gfed');
+    $aauid2 = AAUIDParser::fromString('5678defg8765gfed');
+    $this->assertEquals($aauid1, $aauid2);
+  }
+
 }
