@@ -20,6 +20,7 @@ class AccountContext {
 	private $accessToken;
 	private $dataLoader;
 
+	private $accountDomain = null;
 	private $connectionQualifier = null;
 	private $installQualifier = null;
 	private $accessor = null;
@@ -62,6 +63,11 @@ class AccountContext {
 		if ($request->headers->has('C-Accessor')) {
 			// Store COID of Accessor
 			$this->accessor = new IRI($request->headers->get('C-Accessor'));
+		}
+
+		if ($request->headers->has('C-Account-Domain')) {
+			// Store account domain
+			$this->accountDomain = $request->headers->get('C-Account-Domain');
 		}
 
 		if ($request->headers->has('C-Accessor-Latest-Version')) {
@@ -165,6 +171,16 @@ class AccountContext {
 	 */
 	public function getAccessorCOID() {
 		return $this->accessor;
+	}
+
+	/**
+	 * Get the account's domain.
+	 * Only set from external API requests, null otherwise.
+	 *
+	 * @return string|null
+	 */
+	public function getAccountDomain() {
+		return $this->accountDomain;
 	}
 
 	/**
