@@ -25,6 +25,14 @@ class COIDParserTest extends \PHPUnit_Framework_TestCase {
     $this->assertEquals(COIDParser::COID_INVALID, COIDParser::getType($coid));
     $coid = new IRI('example.com');
     $this->assertEquals(COIDParser::COID_INVALID, COIDParser::getType($coid));
+    $coid = new IRI('COID://example.com');
+    $this->assertEquals(COIDParser::COID_INVALID, COIDParser::getType($coid));
+    $coid = new IRI('Coid://example.com');
+    $this->assertEquals(COIDParser::COID_INVALID, COIDParser::getType($coid));
+    $coid = new IRI('coid://EXAMPLE.COM');
+    $this->assertEquals(COIDParser::COID_INVALID, COIDParser::getType($coid));
+    $coid = new IRI('coid://exAMPle.CoM');
+    $this->assertEquals(COIDParser::COID_INVALID, COIDParser::getType($coid));
   }
 
   public function testUnversionedCOID() {
@@ -65,6 +73,54 @@ class COIDParserTest extends \PHPUnit_Framework_TestCase {
     $this->assertEquals(COIDParser::COID_INVALID, COIDParser::getType($coid));
     $coid = new IRI('coid://example.com/Example/1.a.*');
     $this->assertEquals(COIDParser::COID_INVALID, COIDParser::getType($coid));
+  }
+
+  public function testIRICaseSensitivity() {
+    $coid1 = new IRI('coid://example.com/example/1.0');
+    $coid2 = new IRI('coid://example.com/Example/1.0');
+    $this->assertFalse($coid1->equals($coid2));
+  }
+
+  public function testRootFromString() {
+    $coid1 = new IRI('coid://example.com');
+    $coid2 = COIDParser::fromString('coid://example.com');
+    $coid3 = COIDParser::fromString('example.com');
+    $this->assertTrue($coid1->equals($coid2));
+    $this->assertTrue($coid1->equals($coid3));
+  }
+
+  public function testUnversionedFromString() {
+    $coid1 = new IRI('coid://example.com/Example');
+    $coid2 = COIDParser::fromString('coid://example.com/Example');
+    $coid3 = COIDParser::fromString('example.com/Example');
+    $this->assertTrue($coid1->equals($coid2));
+    $this->assertTrue($coid1->equals($coid3));
+  }
+
+  public function testVersionedFromString() {
+    $coid1 = new IRI('coid://example.com/Example/1.0');
+    $coid2 = COIDParser::fromString('coid://example.com/Example/1.0');
+    $coid3 = COIDParser::fromString('example.com/Example/1.0');
+    $this->assertTrue($coid1->equals($coid2));
+    $this->assertTrue($coid1->equals($coid3));
+  }
+
+  public function testNormalizeRootFromString() {
+    $coid1 = new IRI('coid://example.com');
+    $coid2 = COIDParser::fromString('COID://example.com');
+    $coid3 = COIDParser::fromString('ExAmple.COM');
+    $this->assertTrue($coid1->equals($coid2));
+    $this->assertTrue($coid1->equals($coid3));
+  }
+
+  public function testNormalizeNonRootFromString() {
+    $coid1 = new IRI('coid://example.com/Example');
+    $coid2 = COIDParser::fromString('COID://example.com/Example');
+    $coid3 = COIDParser::fromString('ExAmple.COM/Example');
+    $coid4 = COIDParser::fromString('ExAmple.COM/EXample');
+    $this->assertTrue($coid1->equals($coid2));
+    $this->assertTrue($coid1->equals($coid3));
+    $this->assertFalse($coid1->equals($coid4));
   }
 
 }

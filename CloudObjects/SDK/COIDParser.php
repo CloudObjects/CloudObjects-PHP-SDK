@@ -22,15 +22,17 @@ class COIDParser {
 
   /**
    * Creates a new IRI object representing a COID from a string.
-   * Adds the "coid://" prefix if necessary.
+   * Adds the "coid://" prefix if necessary and normalizes case.
    *
    * @param string $coidString A COID string.
    * @return IRI
    */
   public static function fromString($coidString) {
-    return new IRI(
-      (substr($coidString, 0, 7)=='coid://') ? $coidString : 'coid://'.$coidString
+    $coidPre = new IRI(
+      (strtolower(substr($coidString, 0, 7))=='coid://') ? $coidString : 'coid://'.$coidString
     );
+    // Normalize scheme and host segments to lower case
+    return new IRI('coid://'.strtolower($coidPre->getHost()).$coidPre->getPath());
   }
 
   /**
