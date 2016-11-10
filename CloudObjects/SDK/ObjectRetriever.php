@@ -18,7 +18,7 @@ class ObjectRetriever {
 
 	const CO_API_URL = 'http://api.cloudobjects.io/';
 	
-	const REVISION_PROPERTY = 'coid://cloudobjects.io/revision';
+	const REVISION_PROPERTY = 'coid://cloudobjects.io/isAtRevision';
 
 	public function __construct($options = array()) {
 		// Merge options with defaults
