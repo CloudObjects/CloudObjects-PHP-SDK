@@ -29,7 +29,7 @@ class ObjectRetriever {
 			'cache_ttl_attachments' => 0,
 			'static_config_path' => null,
 			'auth_ns' => null,
-			'password' => null,
+			'auth_secret' => null,
 			'api_base_url' => null
 		), $options);
 
