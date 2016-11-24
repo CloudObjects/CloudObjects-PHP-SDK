@@ -181,10 +181,10 @@ class ObjectRetriever {
 
 			// Does not exist in cache or is outdated, fetch from CloudObjects
 			try {
-				$request = $this->client->get('/'.$coid->getHost().$coid->getPath()
+				$response = $this->client->get('/'.$coid->getHost().$coid->getPath()
 					.'/'.basename($filename));
 
-				$fileContent = $request->send()->getBody(true);
+				$fileContent = $response->getBody()->getContents();
 				$fileData = $object->getProperty(self::REVISION_PROPERTY)->getValue().'#'.$fileContent;
 				$this->putIntoCache($cacheId, $fileData, $this->options['cache_ttl_attachments']);
 			} catch (\Exception $e) {
