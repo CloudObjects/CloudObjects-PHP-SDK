@@ -1,3 +1,3 @@
 # CloudObjects-PHP-SDK
 
-[![Build Status](https://travis-ci.org/CloudObjects/CloudObjects-PHP-SDK.svg?branch=master)](https://travis-ci.org/CloudObjects/CloudObjects-PHP-SDK)
+[![Latest Stable Version](https://poser.pugx.org/cloudobjects/sdk/v/stable)](https://packagist.org/packages/cloudobjects/sdk) [![Total Downloads](https://poser.pugx.org/cloudobjects/sdk/downloads)](https://packagist.org/packages/cloudobjects/sdk) [![Build Status](https://travis-ci.org/CloudObjects/CloudObjects-PHP-SDK.svg?branch=master)](https://travis-ci.org/CloudObjects/CloudObjects-PHP-SDK) [![SensioLabsInsight](https://insight.sensiolabs.com/projects/50356ef0-2266-4890-a5a0-2c4e3e86c761/mini.png)](https://insight.sensiolabs.com/projects/50356ef0-2266-4890-a5a0-2c4e3e86c761)

@@ -3,7 +3,7 @@
 namespace CloudObjects\SDK\AccountGateway;
 
 use ML\IRI\IRI;
-use ML\JsonLD\Document, ML\JsonLD\JsonLD, ML\JsonLD\NQuads;
+use ML\JsonLD\Document, ML\JsonLD\JsonLD, ML\JsonLD\Node;
 use Symfony\Component\HttpFoundation\Request, Symfony\Component\HttpFoundation\Response;
 use GuzzleHttp\Client, GuzzleHttp\HandlerStack, GuzzleHttp\Middleware;
 use Psr\Http\Message\ResponseInterface;
@@ -49,7 +49,7 @@ class AccountContext {
 		}
 	}
 
-	private function parseHeaderIntoNode($headerName, $node) {
+	private function parseHeaderIntoNode($headerName, Node $node) {
 		$keyValuePairs = explode(',', $this->request->headers->get($headerName));
 		foreach ($keyValuePairs as $pair) {
 			$keyValue = explode('=', $pair);
@@ -148,7 +148,7 @@ class AccountContext {
 	 * is requested by a connected account on another service.
 	 */
 	public function usesAccountConnection() {
-		return ($this->connectionQualifier!=null);
+		return ($this->connectionQualifier !== null);
 	}
 
 	/**

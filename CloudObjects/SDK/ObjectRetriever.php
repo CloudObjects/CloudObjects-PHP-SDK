@@ -2,7 +2,7 @@
 
 namespace CloudObjects\SDK;
 
-use ML\IRI\IRI, ML\JsonLD\JsonLD, ML\JsonLD\NQuads;
+use ML\IRI\IRI, ML\JsonLD\JsonLD;
 use Doctrine\Common\Cache\RedisCache;
 use GuzzleHttp\ClientInterface, GuzzleHttp\Client;
 

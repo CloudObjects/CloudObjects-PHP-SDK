@@ -3,7 +3,7 @@
 	"description": "CloudObjects SDK for PHP for working with COIDs and object descriptions from CloudObjects.",
 	"keywords": ["cloudobjects", "sdk"],
 	"homepage": "https://github.com/CloudObjects/CloudObjects-PHP-SDK",
-	"license": "MPL",
+	"license": "MPL-2.0",
 	"require" : {
 		"ml/json-ld": ">=1.0.7",
 		"doctrine/common" : ">=2.6.1",
