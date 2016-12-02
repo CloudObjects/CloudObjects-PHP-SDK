@@ -13,8 +13,8 @@
         <testsuite name="OfflineTests">
             <directory>./tests/OfflineTests/</directory>
         </testsuite>
-        <!-- <testsuite name="OnlineTests">
+        <testsuite name="OnlineTests">
             <directory>./tests/OnlineTests/</directory>
-        </testsuite> -->
+        </testsuite>
     </testsuites>
 </phpunit>
