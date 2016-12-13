@@ -12,6 +12,7 @@ use GuzzleHttp\ClientInterface, GuzzleHttp\Client;
 class ObjectRetriever {
 
 	private $client;
+	private $prefix;
 	private $options;
 	private $cache;
 	private $objects;
@@ -89,9 +90,13 @@ class ObjectRetriever {
 
 	/**
 	 * Set the HTTP client that is used to access the API.
+	 *
+	 * @param ClientInterface $client The HTTP client.
+	 * @param string $prefix An optional prefix (e.g. an AccountGateway mountpoint)
 	 */
-	public function setClient(ClientInterface $client) {
+	public function setClient(ClientInterface $client, $prefix = null) {
 		$this->client = $client;
+		$this->prefix = $prefix;
 	}
 
 	/**
@@ -125,7 +130,7 @@ class ObjectRetriever {
 		if (!isset($object)) {
 			try {
 				$response = $this->client
-					->get('/'.$coid->getHost().$coid->getPath().'/object',
+					->get((isset($this->prefix) ? $this->prefix : '').$coid->getHost().$coid->getPath().'/object',
 						['headers' => ['Accept' => 'application/ld+json']]);
 
 				$object = (string)$response->getBody();
@@ -181,7 +186,7 @@ class ObjectRetriever {
 
 			// Does not exist in cache or is outdated, fetch from CloudObjects
 			try {
-				$response = $this->client->get('/'.$coid->getHost().$coid->getPath()
+				$response = $this->client->get((isset($this->prefix) ? $this->prefix : '').$coid->getHost().$coid->getPath()
 					.'/'.basename($filename));
 
 				$fileContent = $response->getBody()->getContents();
