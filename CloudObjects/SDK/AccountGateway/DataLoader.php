@@ -4,6 +4,7 @@ namespace CloudObjects\SDK\AccountGateway;
 
 use Doctrine\Common\Cache\Cache;
 use ML\JsonLD\JsonLD;
+use GuzzleHttp\Psr7\Request;
 
 class DataLoader {
 
@@ -41,9 +42,8 @@ class DataLoader {
   }
 
   public function fetchAccountGraphDataDocument(AccountContext $accountContext) {
-    $dataRequest = $accountContext->getClient()->createRequest('GET',
-      '/'.$this->mountPointName.'/',
-      ['headers' => ['Accept' => 'application/ld+json']]);
+    $dataRequest = new Request('GET', '/'.$this->mountPointName.'/',
+      ['Accept' => 'application/ld+json']);
 
     if (!$this->cache || !$accountContext->getRequest()
         || !$accountContext->getRequest()->headers->has('C-Data-Updated')) {

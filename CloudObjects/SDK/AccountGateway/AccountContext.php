@@ -136,11 +136,11 @@ class AccountContext {
 	}
 
 	public function getAccount() {
-		return $this->getDocument()->getGraph()->getNode('aauid:'.$this->getAAUID());
+		return $this->getDocument()->getGraph()->getNode($this->getAAUID());
 	}
 
 	public function getPerson() {
-		return $this->getDocument()->getGraph()->getNode('aauid:'.$this->getAAUID().':person');
+		return $this->getDocument()->getGraph()->getNode($this->getAAUID().':person');
 	}
 
 	/**
@@ -190,7 +190,7 @@ class AccountContext {
 	public function getConnectedAccount($qualifier = null) {
 		if (!$qualifier) $qualifier = $this->getConnectionQualifier();
 		if (!$qualifier) return null;
-		return $this->getDocument()->getGraph()->getNode('aauid:'.$this->getAAUID().':account:'.$qualifier);
+		return $this->getDocument()->getGraph()->getNode($this->getAAUID().':account:'.$qualifier);
 	}
 
 	/**
@@ -200,7 +200,7 @@ class AccountContext {
 	public function getAccountConnection($qualifier = null) {
 		if (!$qualifier) $qualifier = $this->getConnectionQualifier();
 		if (!$qualifier) return null;
-		return $this->getDocument()->getGraph()->getNode('aauid:'.$this->getAAUID().':connection:'.$qualifier);
+		return $this->getDocument()->getGraph()->getNode($this->getAAUID().':connection:'.$qualifier);
 	}
 
 	/**
