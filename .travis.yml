@@ -13,4 +13,4 @@ deploy:
   project: ./build/
   domain: php-sdk-docs.cloudobjects.io
   on:
-    php: 7.0
+    php: '7.0'
