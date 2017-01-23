@@ -12,3 +12,5 @@ deploy:
   skip_cleanup: true
   project: ./build/
   domain: php-sdk-docs.cloudobjects.io
+  on:
+    php: 7.0
