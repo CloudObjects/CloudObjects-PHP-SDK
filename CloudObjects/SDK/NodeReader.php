@@ -62,6 +62,7 @@ class NodeReader {
      *
      * @param Node $node The node to work on.
      * @param string|object $property The property to read.
+     * @param $default The default that is returned if no value for the property exists on the node.
      * @return string|null
      */
     public function getFirstValueString(Node $node, $property, $default = null) {

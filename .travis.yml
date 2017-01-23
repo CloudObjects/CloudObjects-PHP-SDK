@@ -4,5 +4,11 @@ php:
   - '7.0'
   - hhvm
   - nightly
-before_script: composer install
+before_script: make
 script: vendor/bin/phpunit --testsuite=OfflineTests
+
+deploy:
+  provider: surge
+  skip_cleanup: true
+  project: ./build/
+  domain: php-sdk-docs.cloudobjects.io
