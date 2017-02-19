@@ -235,7 +235,7 @@ class AccountContext {
 	public function getAllConnectedAccounts() {
 		$accounts = array();
 		foreach ($this->getAllAccountConnections() as $ac) {
-			$accounts[] = $aC->getProperty('coid://accountgateways.cloudobjects.io/connectsTo');
+			$accounts[] = $ac->getProperty('coid://accountgateways.cloudobjects.io/connectsTo');
 		}
 		return $accounts;
 	}
