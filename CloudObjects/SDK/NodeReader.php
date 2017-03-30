@@ -7,6 +7,7 @@
 namespace CloudObjects\SDK;
 
 use ML\JsonLD\Node;
+use ML\IRI\IRI;
 
 /**
  * The NodeReader provides some convenience methods for reading information
@@ -55,6 +56,20 @@ class NodeReader {
             return true;
         else
             return false;
+        
+        return false;
+    }
+
+    private function getFirstValue(Node $node = null, $property, $default = null) {
+        if (!isset($node))
+            return $default;
+        $valueFromNode = $node->getProperty($this->expand($property));
+        if (!isset($valueFromNode))
+            return $default;
+        if (is_array($valueFromNode))
+            return $valueFromNode[0];
+        
+        return $valueFromNode;
     }
 
     /**
@@ -68,18 +83,56 @@ class NodeReader {
      * @return string|null
      */
     public function getFirstValueString(Node $node = null, $property, $default = null) {
-        if (!isset($node))
+        $valueFromNode = $this->getFirstValue($node, $property, $default);
+        if ($valueFromNode == $default)
             return $default;
-        $valueFromNode = $node->getProperty($this->expand($property));
-        if (!isset($valueFromNode))
-            return $default;
-        if (is_array($valueFromNode))
-            $valueFromNode = $valueFromNode[0];
         
         if (is_a($valueFromNode, 'ML\JsonLD\Node'))
             return $valueFromNode->getId();
         else
             return $valueFromNode->getValue();
+    }
+
+    /**
+     * Reads a property from a node and converts it into a IRI.
+     * If the property has multiple values only the first is returned.
+     * If no value is found, value is a literal or the node is null, the default is returned.
+     *
+     * @param Node $node The node to work on.
+     * @param string|object $property The property to read.
+     * @param $default The default that is returned if no value for the property exists on the node.
+     * @return string|null
+     */
+    public function getFirstValueIRI(Node $node = null, $property, IRI $default = null) {
+        $valueFromNode = $this->getFirstValue($node, $property, $default);
+        if ($valueFromNode == $default)
+            return $default;
+        
+        if (is_a($valueFromNode, 'ML\JsonLD\Node'))
+            return new IRI($valueFromNode->getId());
+        else
+            return $default;
+    }
+
+    /**
+     * Reads a property from a node and returns it as a Node.
+     * If the property has multiple values only the first is returned.
+     * If no value is found, value is a literal or the node is null, the default is returned.
+     *
+     * @param Node $node The node to work on.
+     * @param string|object $property The property to read.
+     * @param $default The default that is returned if no value for the property exists on the node.
+     * @return string|null
+     */
+    public function getFirstValueNode(Node $node = null, $property, Node $default = null) {
+        $valueFromNode = $this->getFirstValue($node, $property, $default);
+        if ($valueFromNode == $default)
+            return $default;
+        
+        if (is_a($valueFromNode, 'ML\JsonLD\Node'))
+            return $valueFromNode;
+        else
+            return $default;
     }
 
     /**
@@ -111,4 +164,72 @@ class NodeReader {
         
         return false;
     }
+
+    private function getAllValues(Node $node = null, $property) {
+        if (!isset($node))
+            return [];
+
+        $valueFromNode = $node->getProperty($this->expand($property));
+        if (!isset($valueFromNode))
+            return [];
+        if (!is_array($valueFromNode))
+            $valueFromNode = [$valueFromNode];
+        return $valueFromNode;
+    }
+
+    /**
+     * Reads all values from a node and returns them as a string array.
+     *
+     * @param Node $node The node to work on.
+     * @param string|object $property The property to read.
+     * @return array<string>
+     */
+    public function getAllValuesString(Node $node = null, $property) {
+        $allValues = $this->getAllValues($node, $property);
+        $output = [];
+        foreach ($allValues as $a)
+            if (is_a($a, 'ML\JsonLD\Node'))
+                $output[] = $a->getId();
+            else
+                $output[] = $a->getValue();
+
+        return $output;
+    }
+
+    /**
+     * Reads all values from a node and returns them as a IRI array.
+     * Only converts the Node IDs of nodes into IRI, literal values are skipped.
+     *
+     * @param Node $node The node to work on.
+     * @param string|object $property The property to read.
+     * @return array<IRI>
+     */
+    public function getAllValuesIRI(Node $node = null, $property) {
+        $allValues = $this->getAllValues($node, $property);
+        $output = [];
+        foreach ($allValues as $a)
+            if (is_a($a, 'ML\JsonLD\Node'))
+                $output[] = new IRI($a->getId());
+
+        return $output;
+    }
+
+    /**
+     * Reads all values from a node and returns them as a Node array.
+     * Returns only nodes, literal values are skipped.
+     *
+     * @param Node $node The node to work on.
+     * @param string|object $property The property to read.
+     * @return array<Node>
+     */
+    public function getAllValuesNode(Node $node = null, $property) {
+        $allValues = $this->getAllValues($node, $property);
+        $output = [];
+        foreach ($allValues as $a)
+            if (is_a($a, 'ML\JsonLD\Node'))
+                $output[] = $a;
+
+        return $output;
+    }
+
 }
