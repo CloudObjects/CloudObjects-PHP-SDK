@@ -37,7 +37,9 @@ class NodeReader {
      * @param string|object $type The type to check for.
      * @return boolean
      */
-    public function hasType(Node $node, $type) {
+    public function hasType(Node $node = null, $type) {
+        if (!isset($node))
+            return false;
         $type = $this->expand($type);
         $typesFromNode = $node->getType();
         if (!isset($typesFromNode))
@@ -58,14 +60,16 @@ class NodeReader {
     /**
      * Reads a property from a node and converts it into a string.
      * If the property has multiple values only the first is returned.
-     * If no value is found, the default is returned.
+     * If no value is found or the node is null, the default is returned.
      *
      * @param Node $node The node to work on.
      * @param string|object $property The property to read.
      * @param $default The default that is returned if no value for the property exists on the node.
      * @return string|null
      */
-    public function getFirstValueString(Node $node, $property, $default = null) {
+    public function getFirstValueString(Node $node = null, $property, $default = null) {
+        if (!isset($node))
+            return $default;
         $valueFromNode = $node->getProperty($this->expand($property));
         if (!isset($valueFromNode))
             return $default;
@@ -86,7 +90,9 @@ class NodeReader {
      * @param string|object $value The expected value.
      * @return boolean
      */
-    public function hasPropertyValue(Node $node, $property, $value) {
+    public function hasPropertyValue(Node $node = null, $property, $value) {
+        if (!isset($node))
+            return false;
         $valuesFromNode = $node->getProperty($this->expand($property));
         if (!isset($valuesFromNode))
             return false;
