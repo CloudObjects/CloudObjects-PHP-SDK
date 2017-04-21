@@ -264,7 +264,7 @@ class AccountContext {
    				// If a new version of this accessor is available, store its COID
 				if ($response->hasHeader('C-Accessor-Latest-Version'))
       				$context->setLatestAccessorVersionCOID(
-						new IRI((string)$response->getHeader('C-Accessor-Latest-Version')));
+						new IRI($response->getHeaderLine('C-Accessor-Latest-Version')));
     			return $response;
 			}));
 
