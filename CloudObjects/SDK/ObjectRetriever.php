@@ -28,14 +28,13 @@ class ObjectRetriever {
 	public function __construct($options = array()) {
 		// Merge options with defaults
 		$this->options = array_merge(array(
-			'cache_prefix' => 'clobj:',
 			'cache_provider' => 'none',
+			'cache_prefix' => 'clobj:',
 			'cache_ttl' => 60,
-			'cache_ttl_attachments' => 0,
 			'static_config_path' => null,
 			'auth_ns' => null,
 			'auth_secret' => null,
-			'api_base_url' => null
+			'api_base_url' => null,
 		), $options);
 
 		// Set up object cache
@@ -195,7 +194,7 @@ class ObjectRetriever {
 
 				$fileContent = $response->getBody()->getContents();
 				$fileData = $object->getProperty(self::REVISION_PROPERTY)->getValue().'#'.$fileContent;
-				$this->putIntoCache($cacheId, $fileData, $this->options['cache_ttl_attachments']);
+				$this->putIntoCache($cacheId, $fileData, 0);
 			} catch (\Exception $e) {
 				// ignore exception - treat as non-existing file
 			}
