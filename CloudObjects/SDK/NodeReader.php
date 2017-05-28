@@ -165,6 +165,20 @@ class NodeReader {
         return false;
     }
 
+    /**
+     * Checks whether the node has at least one value for a property.
+     *
+     * @param Node $node The node to work on.
+     * @param string|object $property The property to read.
+     * @return boolean
+     */
+    public function hasProperty(Node $node = null, $property) {
+        if (!isset($node))
+            return false;
+        
+        return ($node->getProperty($this->expand($property)) != null);
+    }
+
     private function getAllValues(Node $node = null, $property) {
         if (!isset($node))
             return [];
