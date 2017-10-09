@@ -17,9 +17,7 @@ use Psr\Http\Message\ResponseInterface;
  */
 class AccountContext {
 
-	const AGW_URL_PREFIX = "https://";
-	const AGW_URL_SUFFIX = ".aauid.net";
-
+	private $agwBaseUrl = 'https://{aauid}.aauid.net';
 	private $aauid;
 	private $accessToken;
 	private $dataLoader;
@@ -251,6 +249,16 @@ class AccountContext {
 	}
 
 	/**
+	 * Specifies a template for the Account Gateway Base URL. Must be a valid URL that
+	 * may contain an {aauid} placeholder. Call this if you want to redirect traffic
+	 * through a proxy or a staging or mock instance of an Account Gateway. Most users
+	 * of this SDK should never call this function.
+	 */
+	public function setAccountGatewayBaseURLTemplate($baseUrl) {
+		$this->agwBaseUrl = $baseUrl;
+	}
+
+	/**
 	 * Get a preconfigured Guzzle client to access the Account Gateway.
 	 * @return Client
 	 */
@@ -270,9 +278,7 @@ class AccountContext {
 
 			// Prepare client options
 			$options = [
-				'base_uri' => self::AGW_URL_PREFIX
-					.AAUIDParser::getAAUID($this->getAAUID())
-					.self::AGW_URL_SUFFIX,
+				'base_uri' => str_replace('{aauid}', AAUIDParser::getAAUID($this->getAAUID()), $this->agwBaseUrl),
 				'headers' => [
 					'Authorization' => 'Bearer '.$this->getAccessToken()
 				],
