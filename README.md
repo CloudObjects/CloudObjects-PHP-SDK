@@ -11,7 +11,7 @@ The SDK is [distributed through packagist](https://packagist.org/packages/cloudo
 ````json
 {
   "require": {
-    "cloudobjects/sdk" : ">=0.6"
+    "cloudobjects/sdk" : ">=0.7"
   }
 }
 ````
@@ -60,7 +60,6 @@ You can pass an array of configuration options to the ObjectRetriever's construc
 | Option | Description | Default |
 |---|---|---|
 | `cache_provider.file.directory` | The directory to store cache data in. | The system's temporary directory. |
-
 
 ## API Documentation
 

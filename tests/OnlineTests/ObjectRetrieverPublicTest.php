@@ -10,7 +10,9 @@ use ML\IRI\IRI;
 
 class ObjectRetrieverTest extends \PHPUnit_Framework_TestCase {
 
-   protected function setUp() {
+  private $retriever;
+
+  protected function setUp() {
     $this->retriever = new ObjectRetriever();
   }
 
