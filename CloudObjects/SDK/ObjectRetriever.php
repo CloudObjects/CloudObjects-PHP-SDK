@@ -21,7 +21,7 @@ class ObjectRetriever {
 	private $cache;
 	private $objects;
 
-	const CO_API_URL = 'http://api.cloudobjects.io/';
+	const CO_API_URL = 'https://api.cloudobjects.net/';
 	
 	const REVISION_PROPERTY = 'coid://cloudobjects.io/isAtRevision';
 
