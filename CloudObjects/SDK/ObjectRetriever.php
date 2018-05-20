@@ -9,6 +9,7 @@ namespace CloudObjects\SDK;
 use ML\IRI\IRI, ML\JsonLD\JsonLD;
 use Doctrine\Common\Cache\RedisCache;
 use GuzzleHttp\ClientInterface, GuzzleHttp\Client;
+use CloudObjects\SDK\Exceptions\CoreAPIException;
 
 /**
  * The ObjectRetriever provides access to objects on CloudObjects.
@@ -103,7 +104,10 @@ class ObjectRetriever {
 	}
 
 	/**
-	 * Get an object description from CloudObjects.
+	 * Get an object description from CloudObjects. Attempts to get object
+	 * from in-memory cache first, stored static configurations next,
+	 * configured external cache third, and finally calls the Object API
+	 * on CloudObjects Core. Returns null if the object was not found.
 	 *
 	 * @param IRI $coid COID of the object
 	 * @return Node|null
@@ -146,6 +150,85 @@ class ObjectRetriever {
 		$document = JsonLD::getDocument($object);
 		$this->objects[$uriString] = $document->getGraph()->getNode($uriString);
 		return $this->objects[$uriString];
+	}
+
+	/**
+	 * Fetch all object descriptions for objects in a specific namespace
+	 * and with a certain type from CloudObjects. Adds individual objects
+	 * to cache and returns a list of COIDs (as IRI) for them. The list
+	 * itself is not cached, which means that every call of this function
+	 * goes to the Object API.
+	 *
+	 * @param IRI $namespaceCoid COID of the namespace
+	 * @param $type RDF type that objects should have
+	 * @return array<IRI>
+	 */
+	public function fetchObjectsInNamespaceWithType(IRI $namespaceCoid, $type) {
+		if (COIDParser::getType($namespaceCoid) != COIDParser::COID_ROOT)
+			throw new \Exception("Not a valid namespace COID.");
+
+		try {
+			$response = $this->client
+				->get((isset($this->prefix) ? $this->prefix : '').$namespaceCoid->getHost().'/all',
+					[
+						'headers' => [ 'Accept' => 'application/ld+json' ],
+						'query' => [ 'type' => $type ]
+					]);
+
+			$document = JsonLD::getDocument((string)$response->getBody());
+			$allObjects = $document->getGraph()->getNodesByType($type);
+			$allIris = [];
+			foreach ($allObjects as $object) {
+				$iri = new IRI($object->getId());
+				if (!COIDParser::isValidCOID($iri)) continue;
+				if ($iri->getHost() != $namespaceCoid->getHost()) continue;
+
+				$this->objects[$object->getId()] = $object;
+				$this->putIntoCache($object->getId(), $object, $this->options['cache_ttl']);
+				$allIris[] = $iri;
+			}	
+		} catch (\Exception $e) {
+			throw new CoreAPIException;
+		}
+	
+		return $allIris;
+	}
+
+	/**
+	 * Fetch all object descriptions for objects in a specific namespace
+	 * from CloudObjects. Adds individual objects to cache and returns a
+	 * list of COIDs (as IRI) for them. The list itself is not cached,
+	 * which means that every call of this function goes to the Object API.
+	 *
+	 * @param IRI $namespaceCoid COID of the namespace
+	 * @return array<IRI>
+	 */
+	public function fetchAllObjectsInNamespace(IRI $namespaceCoid) {
+		if (COIDParser::getType($namespaceCoid) != COIDParser::COID_ROOT)
+			throw new \Exception("Not a valid namespace COID.");
+
+		try {
+			$response = $this->client
+				->get((isset($this->prefix) ? $this->prefix : '').$namespaceCoid->getHost().'/all',
+					[ 'headers' => [ 'Accept' => 'application/ld+json' ] ]);
+
+			$document = JsonLD::getDocument((string)$response->getBody());
+			$allObjects = $document->getGraph()->getNodes();
+			$allIris = [];
+			foreach ($allObjects as $object) {
+				$iri = new IRI($object->getId());
+				if (!COIDParser::isValidCOID($iri)) continue;
+				if ($iri->getHost() != $namespaceCoid->getHost()) continue;
+
+				$this->objects[$object->getId()] = $object;
+				$this->putIntoCache($object->getId(), $object, $this->options['cache_ttl']);
+				$allIris[] = $iri;
+			}	
+		} catch (\Exception $e) {
+			throw new CoreAPIException;
+		}
+	
+		return $allIris;
 	}
 
 	/**
