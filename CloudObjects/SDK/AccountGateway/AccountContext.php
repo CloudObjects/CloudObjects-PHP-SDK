@@ -9,8 +9,9 @@ namespace CloudObjects\SDK\AccountGateway;
 use ML\IRI\IRI;
 use ML\JsonLD\Document, ML\JsonLD\JsonLD, ML\JsonLD\Node;
 use Symfony\Component\HttpFoundation\Request, Symfony\Component\HttpFoundation\Response;
+use Symfony\Bridge\PsrHttpMessage\Factory\DiactorosFactory;
 use GuzzleHttp\Client, GuzzleHttp\HandlerStack, GuzzleHttp\Middleware;
-use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\RequestInterface, Psr\Http\Message\ResponseInterface;
 
 /**
  * The context of an request for an account.
@@ -52,43 +53,43 @@ class AccountContext {
 	}
 
 	private function parseHeaderIntoNode($headerName, Node $node) {
-		$keyValuePairs = explode(',', $this->request->headers->get($headerName));
+		$keyValuePairs = explode(',', $this->request->getHeaderLine($headerName));
 		foreach ($keyValuePairs as $pair) {
 			$keyValue = explode('=', $pair);
 			$node->addPropertyValue($keyValue[0], urldecode($keyValue[1]));
 		}
 	}
 
-	private function parseSymfonyRequest(Request $request) {
+	private function parsePsrRequest(RequestInterface $request) {
 		$this->request = $request;
 
-		if ($request->headers->has('C-Accessor')) {
+		if ($request->hasHeader('C-Accessor')) {
 			// Store COID of Accessor
-			$this->accessor = new IRI($request->headers->get('C-Accessor'));
+			$this->accessor = new IRI($request->getHeaderLine('C-Accessor'));
 		}
 
-		if ($request->headers->has('C-Account-Domain')) {
+		if ($request->hasHeader('C-Account-Domain')) {
 			// Store account domain
-			$this->accountDomain = $request->headers->get('C-Account-Domain');
+			$this->accountDomain = $request->getHeaderLine('C-Account-Domain');
 		}
 
-		if ($request->headers->has('C-Accessor-Latest-Version')) {
+		if ($request->hasHeader('C-Accessor-Latest-Version')) {
 			// A new version of thie accessor is available, store its COID
-			$this->latestAccessorVersionCOID = new IRI($request->headers
-				->get('C-Accessor-Latest-Version'));
+			$this->latestAccessorVersionCOID = new IRI($request
+				->getHeaderLine('C-Accessor-Latest-Version'));
 		}
 
-		if ($request->headers->has('C-Account-Connection')) {
+		if ($request->hasHeader('C-Account-Connection')) {
 			// For access from connected accounts, store qualifier
-			$this->connectionQualifier = $request->headers->get('C-Account-Connection');
+			$this->connectionQualifier = $request->getHeaderLine('C-Account-Connection');
 		}
 
-		if ($request->headers->has('C-Install-Connection')) {
+		if ($request->hasHeader('C-Install-Connection')) {
 			// For access from applications, store qualifier
-			$this->installQualifier = $request->headers->get('C-Install-Connection');
+			$this->installQualifier = $request->getHeaderLine('C-Install-Connection');
 		}
 
-		if ($request->headers->has('C-Connection-Data')) {
+		if ($request->hasHeader('C-Connection-Data')) {
 			// Copy Data into document
 			if (!$this->document) $this->document = new Document();
 			$this->parseHeaderIntoNode('C-Connection-Data',
@@ -102,13 +103,33 @@ class AccountContext {
 	 * @param Request $request
 	 */
 	public static function fromSymfonyRequest(Request $request) {
-		if (!$request->headers->has('C-AAUID') || !$request->headers->has('C-Access-Token')) return null;
+		if (!$request->headers->has('C-AAUID') || !$request->headers->has('C-Access-Token'))
+			return null;
 
 		$context = new AccountContext(
 			new IRI('aauid:'.$request->headers->get('C-AAUID')),
 			$request->headers->get('C-Access-Token'));
 
-		$context->parseSymfonyRequest($request);
+		$psr7Factory = new DiactorosFactory;
+		$context->parsePsrRequest($psr7Factory->createRequest($request));
+
+		return $context;
+	}
+
+	/**
+	 * Create a new context from the current request.
+	 * 
+	 * @param RequestInterface $request
+	 */
+	public static function fromPsrRequest(RequestInterface $request) {
+		if (!$request->hasHeader('C-AAUID') || !$request->hasHeader('C-Access-Token'))
+			return null;
+
+		$context = new AccountContext(
+			new IRI('aauid:'.$request->getHeaderLine('C-AAUID')),
+				$request->getHeaderLine('C-Access-Token'));
+
+		$context->parsePsrRequest($request);
 
 		return $context;
 	}
@@ -284,9 +305,8 @@ class AccountContext {
 				],
 				'handler' => $stack
 			];
-			if (isset($this->request)) {
-				$options['headers']['X-Forwarded-For'] = $this->request->headers->has('X-Forwarded-For')
-					? $this->request->headers->get('X-Forwarded-For') : $this->request->getClientIp();
+			if (isset($this->request) && $this->request->hasHeader('X-Forwarded-For')) {
+				$options['headers']['X-Forwarded-For'] = $this->request->getHeaderLine('X-Forwarded-For');				
 			}
 
 			// Create client

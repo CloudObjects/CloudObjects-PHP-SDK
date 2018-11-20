@@ -63,7 +63,7 @@ class APIClientFactory {
     /**
      * Create a client.
      * Node $api The Web API for which the client should be created.
-     * Node $namepsace The namespace that is accessing the API.
+     * Node $namespace The namespace that is accessing the API.
      */
     public static function createClient(Node $api, Node $namespace) {
         $reader = new NodeReader([
