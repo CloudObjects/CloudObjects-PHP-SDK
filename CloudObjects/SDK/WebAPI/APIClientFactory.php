@@ -6,9 +6,11 @@
 
 namespace CloudObjects\SDK\WebAPI;
 
+use ML\IRI\IRI;
 use ML\JsonLD\Node;
 use CloudObjects\SDK\NodeReader;
 use GuzzleHttp\Client;
+use CloudObjects\SDK\ObjectRetriever;
 use CloudObjects\SDK\Exceptions\InvalidObjectConfigurationException;
 
 /**
@@ -16,6 +18,10 @@ use CloudObjects\SDK\Exceptions\InvalidObjectConfigurationException;
  * based on the configuration data available for an API on CloudObjects.
  */
 class APIClientFactory {
+
+    private $objectRetriever;
+    private $namespace;
+    private $apiClients;
 
     private static function configureBearerTokenAuthentication(Node $api, Node $namespace, NodeReader $reader, array $clientConfig) {
         $accessToken = $reader->getFirstValueString($api, 'oauth2:hasFixedBearerToken');
@@ -61,9 +67,11 @@ class APIClientFactory {
     }
 
     /**
-     * Create a client.
-     * Node $api The Web API for which the client should be created.
-     * Node $namespace The namespace that is accessing the API.
+     * Create a client statically.
+     * @deprecated
+     * 
+     * @param Node $api The Web API for which the client should be created.
+     * @param Node $namespace The namespace that is accessing the API.
      */
     public static function createClient(Node $api, Node $namespace) {
         $reader = new NodeReader([
@@ -91,6 +99,33 @@ class APIClientFactory {
             $clientConfig = self::configureBasicAuthentication($api, $namespace, $reader, $clientConfig);
         
         return new Client($clientConfig);
+    }
+
+    /**
+     * @param ObjectRetriever $objectRetriever An initialized and authenticated object retriever.
+     * @param IRI|null $namespaceCoid The namespace of the API client. Used to retrieve credentials. If this parameter is not provided, the namespace provided with the "auth_ns" configuration option from the object retriever is used.
+     */
+    public function __construct(ObjectRetriever $objectRetriever, IRI $namespaceCoid = null) {
+        $this->objectRetriever = $objectRetriever;
+        $this->namespace = isset($namespaceCoid)
+            ? $objectRetriever->getObject($namespaceCoid)
+            : $objectRetriever->getAuthenticatingNamespaceObject();
+    }
+
+    /**
+     * Get an API client for the WebAPI with the specified COID.
+     * 
+     * @param $apiCoid WebAPI COID
+     */
+    public function getClientWithCOID(IRI $apiCoid) {
+        $apiCoidString = (string)$apiCoid;
+        if (!isset($this->apiClients[$apiCoidString])) {
+            $this->apiClients[$apiCoidString] = self::createClient(
+                $this->objectRetriever->getObject($apiCoid),
+                $this->namespace);
+        }
+
+        return $this->apiClients[$apiCoidString];
     }
 
 }
