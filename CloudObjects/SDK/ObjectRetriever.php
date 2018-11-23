@@ -287,4 +287,19 @@ class ObjectRetriever {
 		return $fileContent;
 	}
 
+	/**
+	 * Retrieve the object that describes the namespace provided with the "auth_ns"
+	 * configuration option.
+	 */
+	public function getAuthenticatingNamespaceObject() {
+		if (!isset($this->options['auth_ns']))
+			throw new \Exception("Missing 'auth_ns' configuration option.");
+
+		$namespaceCoid = COIDParser::fromString($this->options['auth_ns']);
+		if (COIDParser::getType($namespaceCoid) != COIDParser::COID_ROOT)
+			throw new \Exception("The 'auth_ns' configuration option is not a valid namespace/root COID.");
+		
+		return $this->getObject($namespaceCoid);
+	}
+
 }
