@@ -48,14 +48,14 @@ class DataLoader {
   public function fetchAccountGraphDataDocument(AccountContext $accountContext) {
     $dataRequest = new Request('GET', '/'.$this->mountPointName.'/',
       ['Accept' => 'application/ld+json']);
-
+    
     if (!$this->cache || !$accountContext->getRequest()
-        || !$accountContext->getRequest()->headers->has('C-Data-Updated')) {
+        || !$accountContext->getRequest()->hasHeader('C-Data-Updated')) {
       // No cache or no timestamp available, so always fetch from Account Gateway
       $dataString = (string)$accountContext->getClient()->send($dataRequest)->getBody();
     } else {
       $key = $this->cachePrefix.$accountContext->getAAUID();
-      $remoteTimestamp = $accountContext->getRequest()->headers->get('C-Data-Updated');
+      $remoteTimestamp = $accountContext->getRequest()->getHeaderLine('C-Data-Updated');
       if ($this->cache->contains($key)) {
         // Check timestamp
         $cacheEntry = $this->cache->fetch($key);
