@@ -116,6 +116,7 @@ class APIClientFactory {
      * Get an API client for the WebAPI with the specified COID.
      * 
      * @param $apiCoid WebAPI COID
+     * @return Client
      */
     public function getClientWithCOID(IRI $apiCoid) {
         $apiCoidString = (string)$apiCoid;

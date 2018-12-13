@@ -290,6 +290,8 @@ class ObjectRetriever {
 	/**
 	 * Retrieve the object that describes the namespace provided with the "auth_ns"
 	 * configuration option.
+	 * 
+	 * @return Node
 	 */
 	public function getAuthenticatingNamespaceObject() {
 		if (!isset($this->options['auth_ns']))
