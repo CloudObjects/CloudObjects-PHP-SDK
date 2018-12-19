@@ -7,7 +7,8 @@
 	"require" : {
 		"ml/json-ld": ">=1.0.7",
 		"doctrine/common" : ">=2.6.1",
-		"guzzlehttp/guzzle" : ">=6.0"		
+		"guzzlehttp/guzzle" : ">=6.0",
+		"psr/log": "^1.1"		
 	},
 	"authors": [
 		{

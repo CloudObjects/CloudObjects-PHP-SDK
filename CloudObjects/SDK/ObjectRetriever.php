@@ -8,6 +8,7 @@ namespace CloudObjects\SDK;
 
 use ML\IRI\IRI, ML\JsonLD\JsonLD;
 use Doctrine\Common\Cache\RedisCache;
+use Psr\Log\LoggerInterface, Psr\Log\LoggerAwareTrait;
 use GuzzleHttp\ClientInterface, GuzzleHttp\Client;
 use CloudObjects\SDK\Exceptions\CoreAPIException;
 
@@ -15,6 +16,8 @@ use CloudObjects\SDK\Exceptions\CoreAPIException;
  * The ObjectRetriever provides access to objects on CloudObjects.
  */
 class ObjectRetriever {
+
+	use LoggerAwareTrait;
 
 	private $client;
 	private $prefix;
@@ -26,9 +29,9 @@ class ObjectRetriever {
 	
 	const REVISION_PROPERTY = 'coid://cloudobjects.io/isAtRevision';
 
-	public function __construct($options = array()) {
+	public function __construct($options = []) {
 		// Merge options with defaults
-		$this->options = array_merge(array(
+		$this->options = array_merge([
 			'cache_provider' => 'none',
 			'cache_prefix' => 'clobj:',
 			'cache_ttl' => 60,
@@ -36,7 +39,8 @@ class ObjectRetriever {
 			'auth_ns' => null,
 			'auth_secret' => null,
 			'api_base_url' => null,
-		), $options);
+			'logger' => null
+		], $options);
 
 		// Set up object cache
 		switch ($this->options['cache_provider']) {
@@ -64,6 +68,10 @@ class ObjectRetriever {
 				throw new \Exception('Valid values for cache_provider are: none, redis, file');
 		}
 
+		// Set up logger
+		if (is_a($this->options['logger'], LoggerInterface::class))
+			$this->setLogger($this->options['logger']);
+
 		// Initialize client
 		$options = [
 			'base_uri' => isset($options['api_base_url']) ? $options['api_base_url'] : self::CO_API_URL
@@ -73,6 +81,11 @@ class ObjectRetriever {
 			$options['auth'] = [$this->options['auth_ns'], $this->options['auth_secret']];
 
 		$this->client = new Client($options);
+	}
+
+	private function logInfoWithTime($message, $ts) {
+		if (isset($this->logger))
+			$this->logger->info($message, [ 'elapsed_ms' => round((microtime(true) - $ts) * 1000) ]);
 	}
 
 	private function getFromCache($id) {
@@ -122,6 +135,8 @@ class ObjectRetriever {
 			// Return from in-memory cache if it exists
 			return $this->objects[$uriString];
 
+		$ts = microtime(true);
+
 		if (isset($this->options['static_config_path'])) {
 			$location = realpath($this->options['static_config_path'].DIRECTORY_SEPARATOR.
 				$coid->getHost().str_replace('/', DIRECTORY_SEPARATOR, $coid->getPath())
@@ -129,10 +144,15 @@ class ObjectRetriever {
 
 			if ($location && file_exists($location)) {
 				$object = $location;
+				$this->logInfoWithTime('Fetched <'.$uriString.'> from static configuration.', $ts);
 			}
 		}
 
-		if (!isset($object)) $object = $this->getFromCache($uriString);
+		if (!isset($object)) {
+			$object = $this->getFromCache($uriString);
+			if (isset($object))
+				$this->logInfoWithTime('Fetched <'.$uriString.'> from object cache.', $ts);
+		}
 
 		if (!isset($object)) {
 			try {
@@ -142,7 +162,9 @@ class ObjectRetriever {
 
 				$object = (string)$response->getBody();
 				$this->putIntoCache($uriString, $object, $this->options['cache_ttl']);
+				$this->logInfoWithTime('Fetched <'.$uriString.'> from Core API ['.$response->getStatusCode().'].', $ts);
 			} catch (\Exception $e) {
+				$this->logInfoWithTime('Object <'.$uriString.'> not found in Core API ['.$e->getResponse()->getStatusCode().'].', $ts);
 				return null;
 			}
 		}
@@ -167,6 +189,8 @@ class ObjectRetriever {
 		if (COIDParser::getType($namespaceCoid) != COIDParser::COID_ROOT)
 			throw new \Exception("Not a valid namespace COID.");
 
+		$ts = microtime(true);
+
 		try {
 			$response = $this->client
 				->get((isset($this->prefix) ? $this->prefix : '').$namespaceCoid->getHost().'/all',
@@ -186,7 +210,9 @@ class ObjectRetriever {
 				$this->objects[$object->getId()] = $object;
 				$this->putIntoCache($object->getId(), $object, $this->options['cache_ttl']);
 				$allIris[] = $iri;
-			}	
+			}
+
+			$this->logInfoWithTime('Fetched all objects with <'.$type.'> for <'.$namespaceCoid->getHost().'> from Core API ['.$response->getStatusCode().'].', $ts);
 		} catch (\Exception $e) {
 			throw new CoreAPIException;
 		}
@@ -207,6 +233,8 @@ class ObjectRetriever {
 		if (COIDParser::getType($namespaceCoid) != COIDParser::COID_ROOT)
 			throw new \Exception("Not a valid namespace COID.");
 
+		$ts = microtime(true);
+
 		try {
 			$response = $this->client
 				->get((isset($this->prefix) ? $this->prefix : '').$namespaceCoid->getHost().'/all',
@@ -223,7 +251,10 @@ class ObjectRetriever {
 				$this->objects[$object->getId()] = $object;
 				$this->putIntoCache($object->getId(), $object, $this->options['cache_ttl']);
 				$allIris[] = $iri;
-			}	
+			}
+
+			$this->logInfoWithTime('Fetched all objects for <'.$namespaceCoid->getHost().'> from Core API ['.$response->getStatusCode().'].', $ts);
+
 		} catch (\Exception $e) {
 			throw new CoreAPIException;
 		}
@@ -261,11 +292,16 @@ class ObjectRetriever {
 			// Cannot get attachment for non-existing object
 			return null;
 
+		$ts = microtime(true);
+
 		$cacheId = $object->getId().'#'.$filename;
 		$fileData =  $this->getFromCache($cacheId);
 
 		// Parse cached data into revision and content
-		if (isset($fileData)) list($fileRevision, $fileContent) = explode('#', $fileData, 2);
+		if (isset($fileData)) {
+			$this->logInfoWithTime('Fetched attachment <'.$filename.'> for <'.$object->getId().'> from object cache.', $ts);
+			list($fileRevision, $fileContent) = explode('#', $fileData, 2);
+		}
 
 		if (!isset($fileData)
 				|| $fileRevision!=$object->getProperty(self::REVISION_PROPERTY)->getValue()) {
@@ -278,10 +314,12 @@ class ObjectRetriever {
 				$fileContent = $response->getBody()->getContents();
 				$fileData = $object->getProperty(self::REVISION_PROPERTY)->getValue().'#'.$fileContent;
 				$this->putIntoCache($cacheId, $fileData, 0);
+
+				$this->logInfoWithTime('Fetched attachment <'.$filename.'> for <'.$object->getId().'> from Core API ['.$response->getStatusCode().'].', $ts);
 			} catch (\Exception $e) {
+				$this->logInfoWithTime('Attachment <'.$filename.'> for <'.$object->getId().'> not found in Core API ['.$e->getResponse()->getStatusCode().'].', $ts);
 				// ignore exception - treat as non-existing file
 			}
-
 		}
 
 		return $fileContent;
