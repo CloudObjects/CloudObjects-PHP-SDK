@@ -298,10 +298,7 @@ class ObjectRetriever {
 		$fileData =  $this->getFromCache($cacheId);
 
 		// Parse cached data into revision and content
-		if (isset($fileData)) {
-			$this->logInfoWithTime('Fetched attachment <'.$filename.'> for <'.$object->getId().'> from object cache.', $ts);
-			list($fileRevision, $fileContent) = explode('#', $fileData, 2);
-		}
+		if (isset($fileData)) list($fileRevision, $fileContent) = explode('#', $fileData, 2);
 
 		if (!isset($fileData)
 				|| $fileRevision!=$object->getProperty(self::REVISION_PROPERTY)->getValue()) {
@@ -320,6 +317,8 @@ class ObjectRetriever {
 				$this->logInfoWithTime('Attachment <'.$filename.'> for <'.$object->getId().'> not found in Core API ['.$e->getResponse()->getStatusCode().'].', $ts);
 				// ignore exception - treat as non-existing file
 			}
+		} else {
+			$this->logInfoWithTime('Fetched attachment <'.$filename.'> for <'.$object->getId().'> from object cache.', $ts);
 		}
 
 		return $fileContent;
