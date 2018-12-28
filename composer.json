@@ -8,7 +8,8 @@
 		"ml/json-ld": ">=1.0.7",
 		"doctrine/common" : ">=2.6.1",
 		"guzzlehttp/guzzle" : ">=6.0",
-		"psr/log": "^1.1"		
+		"psr/log": "^1.1",
+		"kevinrob/guzzle-cache-middleware": "^3.2"		
 	},
 	"authors": [
 		{

@@ -9,7 +9,9 @@ namespace CloudObjects\SDK;
 use ML\IRI\IRI, ML\JsonLD\JsonLD;
 use Doctrine\Common\Cache\RedisCache;
 use Psr\Log\LoggerInterface, Psr\Log\LoggerAwareTrait;
-use GuzzleHttp\ClientInterface, GuzzleHttp\Client;
+use GuzzleHttp\ClientInterface, GuzzleHttp\Client, GuzzleHttp\HandlerStack;
+use Kevinrob\GuzzleCache\CacheMiddleware, Kevinrob\GuzzleCache\Storage\DoctrineCacheStorage;
+use Kevinrob\GuzzleCache\Strategy\PrivateCacheStrategy;
 use CloudObjects\SDK\Exceptions\CoreAPIException;
 
 /**
@@ -72,9 +74,25 @@ class ObjectRetriever {
 		if (is_a($this->options['logger'], LoggerInterface::class))
 			$this->setLogger($this->options['logger']);
 
+		// Set up handler stack
+		$stack = HandlerStack::create();
+		
+		// Add HTTP cache if specified
+		if (isset($this->cache)) {
+			$stack->push(
+				new CacheMiddleware(
+					new PrivateCacheStrategy(
+						new DoctrineCacheStorage($this->cache)
+					),
+					$this->options['cache_prefix'].':http'
+				)
+			);
+		}		
+
 		// Initialize client
 		$options = [
-			'base_uri' => isset($options['api_base_url']) ? $options['api_base_url'] : self::CO_API_URL
+			'base_uri' => isset($options['api_base_url']) ? $options['api_base_url'] : self::CO_API_URL,
+			'handler' => $stack
 		];
 		
 		if (isset($this->options['auth_ns']) && isset($this->options['auth_secret']))
@@ -89,13 +107,13 @@ class ObjectRetriever {
 	}
 
 	private function getFromCache($id) {
-		return (isset($this->cache) && $this->cache->contains($this->options['cache_prefix'].$id))
-			? $this->cache->fetch($this->options['cache_prefix'].$id) : null;
+		return (isset($this->cache) && $this->cache->contains($this->options['cache_prefix'].':object'.$id))
+			? $this->cache->fetch($this->options['cache_prefix'].':object'.$id) : null;
 	}
 
 	private function putIntoCache($id, $data, $ttl) {
 		if (isset($this->cache))
-			$this->cache->save($this->options['cache_prefix'].$id, $data, $ttl);
+			$this->cache->save($this->options['cache_prefix'].':object'.$id, $data, $ttl);
 	}
 
 	/**
@@ -298,7 +316,10 @@ class ObjectRetriever {
 		$fileData =  $this->getFromCache($cacheId);
 
 		// Parse cached data into revision and content
-		if (isset($fileData)) list($fileRevision, $fileContent) = explode('#', $fileData, 2);
+		if (isset($fileData)) {
+			$this->logInfoWithTime('Fetched attachment <'.$filename.'> for <'.$object->getId().'> from object cache.', $ts);
+			list($fileRevision, $fileContent) = explode('#', $fileData, 2);
+		}
 
 		if (!isset($fileData)
 				|| $fileRevision!=$object->getProperty(self::REVISION_PROPERTY)->getValue()) {
@@ -317,8 +338,7 @@ class ObjectRetriever {
 				$this->logInfoWithTime('Attachment <'.$filename.'> for <'.$object->getId().'> not found in Core API ['.$e->getResponse()->getStatusCode().'].', $ts);
 				// ignore exception - treat as non-existing file
 			}
-		} else {
-			$this->logInfoWithTime('Fetched attachment <'.$filename.'> for <'.$object->getId().'> from object cache.', $ts);
+
 		}
 
 		return $fileContent;
