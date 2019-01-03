@@ -83,8 +83,7 @@ class ObjectRetriever {
 				new CacheMiddleware(
 					new PrivateCacheStrategy(
 						new DoctrineCacheStorage($this->cache)
-					),
-					$this->options['cache_prefix'].':http'
+					)
 				)
 			);
 		}		
@@ -107,13 +106,13 @@ class ObjectRetriever {
 	}
 
 	private function getFromCache($id) {
-		return (isset($this->cache) && $this->cache->contains($this->options['cache_prefix'].':object'.$id))
-			? $this->cache->fetch($this->options['cache_prefix'].':object'.$id) : null;
+		return (isset($this->cache) && $this->cache->contains($this->options['cache_prefix'].$id))
+			? $this->cache->fetch($this->options['cache_prefix'].$id) : null;
 	}
 
 	private function putIntoCache($id, $data, $ttl) {
 		if (isset($this->cache))
-			$this->cache->save($this->options['cache_prefix'].':object'.$id, $data, $ttl);
+			$this->cache->save($this->options['cache_prefix'].$id, $data, $ttl);
 	}
 
 	/**
