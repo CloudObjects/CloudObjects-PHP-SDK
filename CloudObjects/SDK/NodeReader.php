@@ -17,7 +17,7 @@ class NodeReader {
 
     private $prefixes = [];
 
-    public function __construct(array $options) {
+    public function __construct(array $options = []) {
         if (isset($options['prefixes']))
             $this->prefixes = $options['prefixes'];
     }
