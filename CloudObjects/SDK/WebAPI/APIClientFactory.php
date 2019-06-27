@@ -10,8 +10,9 @@ use ML\IRI\IRI;
 use ML\JsonLD\Node;
 use CloudObjects\SDK\NodeReader;
 use GuzzleHttp\Client;
-use CloudObjects\SDK\ObjectRetriever;
-use CloudObjects\SDK\Exceptions\InvalidObjectConfigurationException;
+use CloudObjects\SDK\COIDParser, CloudObjects\SDK\ObjectRetriever;
+use CloudObjects\SDK\Exceptions\InvalidObjectConfigurationException,
+    CloudObjects\SDK\Exceptions\CoreAPIException;
 
 /**
  * The APIClientFactory can be used to create a preconfigured Guzzle HTTP API client
@@ -21,16 +22,19 @@ class APIClientFactory {
 
     private $objectRetriever;
     private $namespace;
-    private $apiClients;
+    private $reader;
+    private $apiClients = [];
 
-    private static function configureBearerTokenAuthentication(Node $api, Node $namespace, NodeReader $reader, array $clientConfig) {
-        $accessToken = $reader->getFirstValueString($api, 'oauth2:hasFixedBearerToken');
+    private function configureBearerTokenAuthentication(Node $api, array $clientConfig) {
+        // see also: https://cloudobjects.io/webapi.cloudobjects.io/HTTPBasicAuthentication
+
+        $accessToken = $this->reader->getFirstValueString($api, 'oauth2:hasFixedBearerToken');
 
         if (!isset($accessToken)) {
-            $tokenProperty = $reader->getFirstValueString($api, 'oauth2:usesFixedBearerTokenFrom');
+            $tokenProperty = $this->reader->getFirstValueString($api, 'oauth2:usesFixedBearerTokenFrom');
             if (!isset($tokenProperty))
                 throw new InvalidObjectConfigurationException("An API must have either a fixed access token or a defined token property.");
-            $accessToken = $reader->getFirstValueString($namespace, $tokenProperty);
+            $accessToken = $this->reader->getFirstValueString($this->namespace, $tokenProperty);
             if (!isset($accessToken))
                 throw new InvalidObjectConfigurationException("The namespace does not have a value for <".$tokenProperty.">.");
         }
@@ -40,24 +44,26 @@ class APIClientFactory {
         return $clientConfig;
     }
 
-    private static function configureBasicAuthentication(Node $api, Node $namespace, NodeReader $reader, array $clientConfig) {
-        $username = $reader->getFirstValueString($api, 'wa:hasFixedUsername');
-        $password = $reader->getFirstValueString($api, 'wa:hasFixedPassword');
+    private function configureBasicAuthentication(Node $api, array $clientConfig) {
+        // see also: https://cloudobjects.io/webapi.cloudobjects.io/HTTPBasicAuthentication
+
+        $username = $this->reader->getFirstValueString($api, 'wa:hasFixedUsername');
+        $password = $this->reader->getFirstValueString($api, 'wa:hasFixedPassword');
 
         if (!isset($username)) {
-            $usernameProperty = $reader->getFirstValueString($api, 'wa:usesUsernameFrom');
+            $usernameProperty = $this->reader->getFirstValueString($api, 'wa:usesUsernameFrom');
             if (!isset($usernameProperty))
                 throw new InvalidObjectConfigurationException("An API must have either a fixed username or a defined username property.");
-            $username = $reader->getFirstValueString($namespace, $usernameProperty);
+            $username = $this->reader->getFirstValueString($this->namespace, $usernameProperty);
             if (!isset($username))
                 throw new InvalidObjectConfigurationException("The namespace does not have a value for <".$usernameProperty.">.");
         }
 
         if (!isset($password)) {
-            $passwordProperty = $reader->getFirstValueString($api, 'wa:usesPasswordFrom');
+            $passwordProperty = $this->reader->getFirstValueString($api, 'wa:usesPasswordFrom');
             if (!isset($passwordProperty))
                 throw new InvalidObjectConfigurationException("An API must have either a fixed password or a defined password property.");
-            $password = $reader->getFirstValueString($namespace, $passwordProperty);
+            $password = $this->reader->getFirstValueString($this->namespace, $passwordProperty);
             if (!isset($password))
                 throw new InvalidObjectConfigurationException("The namespace does not have a value for <".$passwordProperty.">.");
         }
@@ -66,37 +72,46 @@ class APIClientFactory {
         return $clientConfig;
     }
 
-    /**
-     * Create a client statically.
-     * @deprecated
-     * 
-     * @param Node $api The Web API for which the client should be created.
-     * @param Node $namespace The namespace that is accessing the API.
-     */
-    public static function createClient(Node $api, Node $namespace) {
-        $reader = new NodeReader([
-            'prefixes' => [
-                'wa' => 'coid://webapi.cloudobjects.io/',
-                'oauth2' => 'coid://oauth2.cloudobjects.io/'
-            ]
-        ]);
+    private function configureSharedSecretBasicAuthentication(Node $api, array $clientConfig) {
+        // see also: https://cloudobjects.io/webapi.cloudobjects.io/SharedSecretAuthenticationViaHTTPBasic
 
-        if (!$reader->hasType($api, 'wa:WebAPI'))
+        $username = COIDParser::fromString($this->namespace->getId())->getHost();
+
+        $apiCoid = COIDParser::fromString($api->getId());
+        $providerNamespaceCoid = COIDParser::getNamespaceCOID($apiCoid);
+        $providerNamespace = $this->objectRetriever->get($providerNamespaceCoid);
+        $sharedSecret = $this->reader->getAllValuesNode($providerNamespace, 'co:hasSharedSecret');
+        if (count($sharedSecret) != 1)
+            throw new CoreAPIException("Could not retrieve the shared secret.");
+        
+        $password = $this->reader->getFirstValueString($sharedSecret[0], 'co:hasTokenValue');
+
+        $clientConfig['auth'] = [$username, $password];
+        var_dump($clientConfig); die;
+        return $clientConfig;
+    }
+
+    private function createClient(Node $api) {        
+        if (!$this->reader->hasType($api, 'wa:WebAPI'))
             throw new InvalidObjectConfigurationException("The API node must have the type <coid://webapi.cloudobjects.io/WebAPI>.");
         
-        $baseUrl = $reader->getFirstValueString($api, 'wa:hasBaseURL');
+        $baseUrl = $this->reader->getFirstValueString($api, 'wa:hasBaseURL');
         if (!isset($baseUrl))
             throw new InvalidObjectConfigurationException("The API must have a base URL.");
         
         $clientConfig = [ 'base_uri' => $baseUrl ];
 
-        if ($reader->hasPropertyValue($api, 'wa:supportsAuthenticationMechanism',
+        if ($this->reader->hasPropertyValue($api, 'wa:supportsAuthenticationMechanism',
                 'oauth2:FixedBearerTokenAuthentication'))
-            $clientConfig = self::configureBearerTokenAuthentication($api, $namespace, $reader, $clientConfig);
-        else
-        if ($reader->hasPropertyValue($api, 'wa:supportsAuthenticationMechanism',
+            $clientConfig = $this->configureBearerTokenAuthentication($api, $clientConfig);
+
+        elseif ($this->reader->hasPropertyValue($api, 'wa:supportsAuthenticationMechanism',
                 'wa:HTTPBasicAuthentication'))
-            $clientConfig = self::configureBasicAuthentication($api, $namespace, $reader, $clientConfig);
+            $clientConfig = $this->configureBasicAuthentication($api, $clientConfig);
+
+        elseif ($this->reader->hasPropertyValue($api, 'wa:supportsAuthenticationMechanism',
+        'wa:SharedSecretAuthenticationViaHTTPBasic'))
+            $clientConfig = $this->configureSharedSecretBasicAuthentication($api, $clientConfig);
         
         return new Client($clientConfig);
     }
@@ -110,6 +125,14 @@ class APIClientFactory {
         $this->namespace = isset($namespaceCoid)
             ? $objectRetriever->getObject($namespaceCoid)
             : $objectRetriever->getAuthenticatingNamespaceObject();
+        
+        $this->reader = new NodeReader([
+            'prefixes' => [
+                'co' => 'coid://cloudobjects.io/',
+                'wa' => 'coid://webapi.cloudobjects.io/',
+                'oauth2' => 'coid://oauth2.cloudobjects.io/'
+            ]
+        ]);
     }
 
     /**
@@ -121,9 +144,8 @@ class APIClientFactory {
     public function getClientWithCOID(IRI $apiCoid) {
         $apiCoidString = (string)$apiCoid;
         if (!isset($this->apiClients[$apiCoidString])) {
-            $this->apiClients[$apiCoidString] = self::createClient(
-                $this->objectRetriever->getObject($apiCoid),
-                $this->namespace);
+            $this->apiClients[$apiCoidString] = $this->createClient(
+                $this->objectRetriever->getObject($apiCoid));
         }
 
         return $this->apiClients[$apiCoidString];
