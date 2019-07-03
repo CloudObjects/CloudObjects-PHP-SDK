@@ -87,7 +87,6 @@ class APIClientFactory {
         $password = $this->reader->getFirstValueString($sharedSecret[0], 'co:hasTokenValue');
 
         $clientConfig['auth'] = [$username, $password];
-        var_dump($clientConfig); die;
         return $clientConfig;
     }
 
