@@ -192,6 +192,20 @@ class NodeReader {
     }
 
     /**
+     * Get the language-tagged-string for the property in the specified language.
+     * If no value is found for the specified language, the default is returned.
+     */
+    public function getLocalizedString(Node $node = null, $property, $language, $default = null) {
+        $values = $this->getAllValues($node, $property);
+        foreach ($values as $v) {
+            if (is_a($v, 'ML\JsonLD\LanguageTaggedString') && $v->getLanguage() == $language)
+                return $v->getValue();
+        }
+
+        return $default;
+    }
+
+    /**
      * Reads all values from a node and returns them as a string array.
      *
      * @param Node $node The node to work on.
