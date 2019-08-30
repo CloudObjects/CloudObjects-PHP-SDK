@@ -6,6 +6,7 @@
 
 namespace CloudObjects\SDK\WebAPI;
 
+use Exception;
 use ML\IRI\IRI;
 use ML\JsonLD\Node;
 use CloudObjects\SDK\NodeReader;
@@ -90,9 +91,9 @@ class APIClientFactory {
         return $clientConfig;
     }
 
-    private function createClient(Node $api) {        
-        if (!$this->reader->hasType($api, 'wa:WebAPI'))
-            throw new InvalidObjectConfigurationException("The API node must have the type <coid://webapi.cloudobjects.io/WebAPI>.");
+    private function createClient(Node $api, bool $specificClient = false) {        
+        if (!$this->reader->hasType($api, 'wa:HTTPEndpoint'))
+            throw new InvalidObjectConfigurationException("The API node must have the type <coid://webapi.cloudobjects.io/HTTPEndpoint>.");
         
         $baseUrl = $this->reader->getFirstValueString($api, 'wa:hasBaseURL');
         if (!isset($baseUrl))
@@ -112,7 +113,15 @@ class APIClientFactory {
         'wa:SharedSecretAuthenticationViaHTTPBasic'))
             $clientConfig = $this->configureSharedSecretBasicAuthentication($api, $clientConfig);
         
-        return new Client($clientConfig);
+        if ($specificClient == false)
+            return new Client($clientConfig);
+
+        if ($this->reader->hasType($api, 'wa:GraphQLEndpoint')) {
+            if (!class_exists('GraphQL\Client'))
+                throw new Exception("Install the gmostafa/php-graphql-client package to retrieve a specific client for wa:GraphQLEndpoint objects.");
+            return new GraphQLClient(new Client($clientConfig));
+        } else
+            return new Client($clientConfig);
     }
 
     /**
@@ -137,17 +146,18 @@ class APIClientFactory {
     /**
      * Get an API client for the WebAPI with the specified COID.
      * 
-     * @param $apiCoid WebAPI COID
+     * @param IRI $apiCoid WebAPI COID
+     * @param boolean $specificClient If TRUE, returns a specific client class based on the API type. If FALSE, always returns a Guzzle client. Defaults to FALSE.
      * @return Client
      */
-    public function getClientWithCOID(IRI $apiCoid) {
-        $apiCoidString = (string)$apiCoid;
-        if (!isset($this->apiClients[$apiCoidString])) {
-            $this->apiClients[$apiCoidString] = $this->createClient(
-                $this->objectRetriever->getObject($apiCoid));
+    public function getClientWithCOID(IRI $apiCoid, bool $specificClient = false) {
+        $idString = (string)$apiCoid.(string)$specificClient;
+        if (!isset($this->apiClients[$idString])) {
+            $this->apiClients[$idString] = $this->createClient(
+                $this->objectRetriever->getObject($apiCoid), $specificClient);
         }
 
-        return $this->apiClients[$apiCoidString];
+        return $this->apiClients[$idString];
     }
 
 }
