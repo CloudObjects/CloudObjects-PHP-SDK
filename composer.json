@@ -26,11 +26,13 @@
 		"phpunit/phpunit": ">=4.8.0,<5.0",
 		"symfony/http-foundation" : ">=4.0",
 		"symfony/psr-http-message-bridge" : ">=1.1.0",
-		"zendframework/zend-diactoros" : "~1.8.6"
+		"zendframework/zend-diactoros" : "~1.8.6",
+		"defuse/php-encryption" : "^2.2"
 	},
 	"suggest" : {
 		"symfony/http-foundation" : "Required to use parseSymfonyRequest() in AccountContext.",
 		"symfony/psr-http-message-bridge" : "Required to use parseSymfonyRequest() in AccountContext.",
-		"zendframework/zend-diactoros" : "Required to use parseSymfonyRequest() in AccountContext."
+		"zendframework/zend-diactoros" : "Required to use parseSymfonyRequest() in AccountContext.",
+		"defuse/php-encryption": "Required to use CryptoHelper"
 	}
 }
