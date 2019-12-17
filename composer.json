@@ -9,7 +9,8 @@
 		"doctrine/common" : ">=2.6.1",
 		"guzzlehttp/guzzle" : ">=6.0",
 		"psr/log": "^1.1",
-		"kevinrob/guzzle-cache-middleware": "^3.2"		
+		"kevinrob/guzzle-cache-middleware": "^3.2",
+		"webmozart/assert": "^1.6"		
 	},
 	"authors": [
 		{
