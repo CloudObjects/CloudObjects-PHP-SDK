@@ -13,6 +13,7 @@ use GuzzleHttp\ClientInterface, GuzzleHttp\Client, GuzzleHttp\HandlerStack;
 use Kevinrob\GuzzleCache\CacheMiddleware, Kevinrob\GuzzleCache\Storage\DoctrineCacheStorage;
 use Kevinrob\GuzzleCache\Strategy\PrivateCacheStrategy;
 use CloudObjects\SDK\Exceptions\CoreAPIException;
+use CloudObjects\SDK\AccountGateway\AccountContext;
 
 /**
  * The ObjectRetriever provides access to objects on CloudObjects.
@@ -131,6 +132,23 @@ class ObjectRetriever {
 	public function setClient(ClientInterface $client, $prefix = null) {
 		$this->client = $client;
 		$this->prefix = $prefix;
+	}
+
+	/**
+	 * Creates a clone of this object retriever that uses the given account
+	 * context to access the API as a developer API. Cache settings are inherited
+	 * but the prefix is extended to keep cache content specific to account.
+	 * 
+	 * @param AccountContext $accountContext
+	 * @param string $mountpointName The name for the API mountpoint.
+	 */
+	public function withAccountContext(AccountContext $accountContext, string $mountpointName) {
+		$newRetriever = new self($this->options);
+		$newRetriever->options['cache_prefix'] .= (string)$accountContext->getAAUID();
+		$newRetriever->client = $accountContext->getClient();
+		$newRetriever->prefix = '/'.$mountpointName.'/';
+		
+		return $newRetriever;
 	}
 
 	/**
