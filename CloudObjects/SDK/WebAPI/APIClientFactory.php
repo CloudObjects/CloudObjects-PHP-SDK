@@ -112,14 +112,16 @@ class APIClientFactory {
         elseif ($this->reader->hasPropertyValue($api, 'wa:supportsAuthenticationMechanism',
         'wa:SharedSecretAuthenticationViaHTTPBasic'))
             $clientConfig = $this->configureSharedSecretBasicAuthentication($api, $clientConfig);
-        
+
         if ($specificClient == false)
             return new Client($clientConfig);
 
         if ($this->reader->hasType($api, 'wa:GraphQLEndpoint')) {
             if (!class_exists('GraphQL\Client'))
                 throw new Exception("Install the gmostafa/php-graphql-client package to retrieve a specific client for wa:GraphQLEndpoint objects.");
-            return new GraphQLClient(new Client($clientConfig));
+            
+            return new \GraphQL\Client($clientConfig['base_uri'],
+                isset($clientConfig['headers']) ? $clientConfig['headers'] : []);
         } else
             return new Client($clientConfig);
     }
