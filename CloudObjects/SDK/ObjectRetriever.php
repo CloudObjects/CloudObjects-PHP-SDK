@@ -42,7 +42,9 @@ class ObjectRetriever {
 			'auth_ns' => null,
 			'auth_secret' => null,
 			'api_base_url' => null,
-			'logger' => null
+			'logger' => null,
+			'timeout' => 20,
+			'connect_timeout' => 5
 		], $options);
 
 		// Set up object cache
@@ -92,7 +94,9 @@ class ObjectRetriever {
 		// Initialize client
 		$options = [
 			'base_uri' => isset($options['api_base_url']) ? $options['api_base_url'] : self::CO_API_URL,
-			'handler' => $stack
+			'handler' => $stack,
+			'connect_timeout' => $this->options['connect_timeout'],
+            'timeout' => $this->options['timeout']
 		];
 		
 		if (isset($this->options['auth_ns']) && isset($this->options['auth_secret']))

@@ -21,6 +21,9 @@ use CloudObjects\SDK\Exceptions\InvalidObjectConfigurationException,
  */
 class APIClientFactory {
 
+    const DEFAULT_CONNECT_TIMEOUT = 5;
+    const DEFAULT_TIMEOUT = 20;
+
     private $objectRetriever;
     private $namespace;
     private $reader;
@@ -99,7 +102,11 @@ class APIClientFactory {
         if (!isset($baseUrl))
             throw new InvalidObjectConfigurationException("The API must have a base URL.");
         
-        $clientConfig = [ 'base_uri' => $baseUrl ];
+        $clientConfig = [
+            'base_uri' => $baseUrl,
+            'connect_timeout' => self::DEFAULT_CONNECT_TIMEOUT,
+            'timeout' => self::DEFAULT_TIMEOUT
+        ];
 
         if ($this->reader->hasPropertyValue($api, 'wa:supportsAuthenticationMechanism',
                 'oauth2:FixedBearerTokenAuthentication'))
