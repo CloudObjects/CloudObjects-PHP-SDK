@@ -10,19 +10,51 @@ use ML\IRI\IRI;
 
 class ObjectRetrieverTest extends \PHPUnit_Framework_TestCase {
 
-  private $retriever;
+    private $retriever;
 
-  protected function setUp() {
-    $this->retriever = new ObjectRetriever();
-  }
+    protected function setUp() {
+        $this->retriever = new ObjectRetriever;
+    }
 
-  public function testGetRootResource() {
-    $coid = new IRI('coid://cloudobjects.io');
-    $object = $this->retriever->getObject($coid);
-    $this->assertNotNull($object);
-    $this->assertEquals((string)$coid, $object->getID());
-    $this->assertNotNull($object->getProperty('http://www.w3.org/2000/01/rdf-schema#label'));
-    $this->assertEquals('CloudObjects', $object->getProperty('http://www.w3.org/2000/01/rdf-schema#label')->getValue());
-  }
+    private function stringifyItems(array $input) {
+        $output = [];
+        foreach ($input as $i)
+            $output[] = (string)$i;
+        
+        return $output;
+    }
+
+    public function testGetRootObject() {
+        $coid = new IRI('coid://cloudobjects.io');
+        $object = $this->retriever->getObject($coid);
+        $this->assertNotNull($object);
+        $this->assertEquals((string)$coid, $object->getID());
+        $this->assertNotNull($object->getProperty('http://www.w3.org/2000/01/rdf-schema#label'));
+        $this->assertEquals('CloudObjects', $object->getProperty('http://www.w3.org/2000/01/rdf-schema#label')->getValue());
+    }
+
+    public function testGetCOIDList() {
+        $coid = new IRI('coid://cloudobjects.io');
+        $list = $this->stringifyItems(
+            $this->retriever->getCOIDListForNamespace($coid)
+        );
+        $this->assertNotEmpty($list);
+
+        $this->assertContains('coid://cloudobjects.io/isVisibleTo', $list);
+        $this->assertContains('coid://cloudobjects.io/Public', $list);
+        $this->assertNotContains('coid://json.cloudobjects.io/Element', $list);
+    }
+
+    public function testGetFilteredCOIDList() {
+        $coid = new IRI('coid://cloudobjects.io');
+        $list = $this->stringifyItems(
+            $this->retriever->getCOIDListForNamespaceWithType($coid, 'coid://cloudobjects.io/Audience')
+        );
+        $this->assertNotEmpty($list);
+
+        $this->assertNotContains('coid://cloudobjects.io/isVisibleTo', $list);
+        $this->assertContains('coid://cloudobjects.io/Public', $list);
+        $this->assertContains('coid://cloudobjects.io/Private', $list);
+    }
 
 }

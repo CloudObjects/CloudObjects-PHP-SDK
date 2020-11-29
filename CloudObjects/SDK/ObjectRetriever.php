@@ -6,6 +6,7 @@
  
 namespace CloudObjects\SDK;
 
+use Exception;
 use ML\IRI\IRI, ML\JsonLD\JsonLD;
 use Doctrine\Common\Cache\RedisCache;
 use Psr\Log\LoggerInterface, Psr\Log\LoggerAwareTrait;
@@ -70,7 +71,7 @@ class ObjectRetriever {
 				);
 				break;
 			default:
-				throw new \Exception('Valid values for cache_provider are: none, redis, file');
+				throw new Exception('Valid values for cache_provider are: none, redis, file');
 		}
 
 		// Set up logger
@@ -166,7 +167,7 @@ class ObjectRetriever {
 	 */
 	public function getObject(IRI $coid) {
 		if (!COIDParser::isValidCOID($coid))
-			throw new \Exception("Not a valid COID.");
+			throw new Exception("Not a valid COID.");
 
 		$uriString = (string)$coid;
 
@@ -202,7 +203,7 @@ class ObjectRetriever {
 				$object = (string)$response->getBody();
 				$this->putIntoCache($uriString, $object, $this->options['cache_ttl']);
 				$this->logInfoWithTime('Fetched <'.$uriString.'> from Core API ['.$response->getStatusCode().'].', $ts);
-			} catch (\Exception $e) {
+			} catch (Exception $e) {
 				$this->logInfoWithTime('Object <'.$uriString.'> not found in Core API ['.$e->getResponse()->getStatusCode().'].', $ts);
 				return null;
 			}
@@ -226,9 +227,10 @@ class ObjectRetriever {
 	 */
 	public function fetchObjectsInNamespaceWithType(IRI $namespaceCoid, $type) {
 		if (COIDParser::getType($namespaceCoid) != COIDParser::COID_ROOT)
-			throw new \Exception("Not a valid namespace COID.");
+			throw new Exception("Not a valid namespace COID.");
 
 		$ts = microtime(true);
+		$type = (string)$type;
 
 		try {
 			$response = $this->client
@@ -252,7 +254,7 @@ class ObjectRetriever {
 			}
 
 			$this->logInfoWithTime('Fetched all objects with <'.$type.'> for <'.$namespaceCoid->getHost().'> from Core API ['.$response->getStatusCode().'].', $ts);
-		} catch (\Exception $e) {
+		} catch (Exception $e) {
 			throw new CoreAPIException;
 		}
 	
@@ -270,7 +272,7 @@ class ObjectRetriever {
 	 */
 	public function fetchAllObjectsInNamespace(IRI $namespaceCoid) {
 		if (COIDParser::getType($namespaceCoid) != COIDParser::COID_ROOT)
-			throw new \Exception("Not a valid namespace COID.");
+			throw new Exception("Not a valid namespace COID.");
 
 		$ts = microtime(true);
 
@@ -285,7 +287,7 @@ class ObjectRetriever {
 			foreach ($allObjects as $object) {
 				$iri = new IRI($object->getId());
 				if (!COIDParser::isValidCOID($iri)) continue;
-				if ($iri->getHost() != $namespaceCoid->getHost()) continue;
+					if ($iri->getHost() != $namespaceCoid->getHost()) continue;
 
 				$this->objects[$object->getId()] = $object;
 				$this->putIntoCache($object->getId(), $object, $this->options['cache_ttl']);
@@ -294,10 +296,83 @@ class ObjectRetriever {
 
 			$this->logInfoWithTime('Fetched all objects for <'.$namespaceCoid->getHost().'> from Core API ['.$response->getStatusCode().'].', $ts);
 
-		} catch (\Exception $e) {
+		} catch (Exception $e) {
 			throw new CoreAPIException;
 		}
 	
+		return $allIris;
+	}
+
+	/**
+	 * Fetch a list of COIDs for all objects in a specific namespace
+	 * from CloudObjects, but not the objects itself. The list is not cached,
+	 * which means that every call of this function goes to the Object API.
+	 *
+	 * @param IRI $namespaceCoid COID of the namespace
+	 * @return array<IRI>
+	 */
+	public function getCOIDListForNamespace(IRI $namespaceCoid) {
+		if (COIDParser::getType($namespaceCoid) != COIDParser::COID_ROOT)
+			throw new Exception("Not a valid namespace COID.");
+
+		$ts = microtime(true);
+
+		try {
+			$response = $this->client
+				->get((isset($this->prefix) ? $this->prefix : '').$namespaceCoid->getHost().'/coids',
+					[ 'headers' => [ 'Accept' => 'application/ld+json' ] ]);
+
+			$document = JsonLD::getDocument((string)$response->getBody());
+			$containerNode = $document->getGraph()->getNode('co-namespace-members://'.$namespaceCoid->getHost());
+			
+			$reader = new NodeReader([ 'prefixes' => [ 'rdfs' => 'http://www.w3.org/2000/01/rdf-schema#' ]]);		
+			$allIris = $reader->getAllValuesIRI($containerNode, 'rdfs:member');
+		
+			$this->logInfoWithTime('Fetched object list for <'.$namespaceCoid->getHost().'> from Core API ['.$response->getStatusCode().'].', $ts);
+
+		} catch (Exception $e) {
+			throw new CoreAPIException;
+		}
+
+		return $allIris;
+	}
+
+	/**
+	 * Fetch a list of COIDs for all objects in a specific namespace
+	 * from CloudObjects, but not the objects itself. The list is not cached,
+	 * which means that every call of this function goes to the Object API.
+	 *
+	 * @param IRI $namespaceCoid COID of the namespace
+	 * @param $type RDF type that objects should have
+	 * @return array<IRI>
+	 */
+	public function getCOIDListForNamespaceWithType(IRI $namespaceCoid, $type) {		
+		if (COIDParser::getType($namespaceCoid) != COIDParser::COID_ROOT)
+			throw new Exception("Not a valid namespace COID.");
+
+		$ts = microtime(true);
+		$type = (string)$type;
+
+		try {
+			$response = $this->client
+				->get((isset($this->prefix) ? $this->prefix : '').$namespaceCoid->getHost().'/coids',
+					[
+						'headers' => [ 'Accept' => 'application/ld+json' ],
+						'query' => [ 'type' => $type ]
+					]);
+
+			$document = JsonLD::getDocument((string)$response->getBody());
+			$containerNode = $document->getGraph()->getNode('co-namespace-members://'.$namespaceCoid->getHost());
+			
+			$reader = new NodeReader([ 'prefixes' => [ 'rdfs' => 'http://www.w3.org/2000/01/rdf-schema#' ]]);		
+			$allIris = $reader->getAllValuesIRI($containerNode, 'rdfs:member');
+		
+			$this->logInfoWithTime('Fetched object list with <'.$type.'> for <'.$namespaceCoid->getHost().'> from Core API ['.$response->getStatusCode().'].', $ts);
+
+		} catch (Exception $e) {
+			throw new CoreAPIException;
+		}
+
 		return $allIris;
 	}
 
@@ -315,7 +390,7 @@ class ObjectRetriever {
 		if (is_object($coid) && get_class($coid)=='ML\IRI\IRI')
 			return $this->getObject($coid);
 
-		throw new \Exception('COID must be passed as a string or an IRI object.');
+		throw new Exception('COID must be passed as a string or an IRI object.');
 	}
 
 	/**
@@ -355,7 +430,7 @@ class ObjectRetriever {
 				$this->putIntoCache($cacheId, $fileData, 0);
 
 				$this->logInfoWithTime('Fetched attachment <'.$filename.'> for <'.$object->getId().'> from Core API ['.$response->getStatusCode().'].', $ts);
-			} catch (\Exception $e) {
+			} catch (Exception $e) {
 				$this->logInfoWithTime('Attachment <'.$filename.'> for <'.$object->getId().'> not found in Core API ['.$e->getResponse()->getStatusCode().'].', $ts);
 				// ignore exception - treat as non-existing file
 			}
@@ -373,11 +448,11 @@ class ObjectRetriever {
 	 */
 	public function getAuthenticatingNamespaceObject() {
 		if (!isset($this->options['auth_ns']))
-			throw new \Exception("Missing 'auth_ns' configuration option.");
+			throw new Exception("Missing 'auth_ns' configuration option.");
 
 		$namespaceCoid = COIDParser::fromString($this->options['auth_ns']);
 		if (COIDParser::getType($namespaceCoid) != COIDParser::COID_ROOT)
-			throw new \Exception("The 'auth_ns' configuration option is not a valid namespace/root COID.");
+			throw new Exception("The 'auth_ns' configuration option is not a valid namespace/root COID.");
 		
 		return $this->getObject($namespaceCoid);
 	}
