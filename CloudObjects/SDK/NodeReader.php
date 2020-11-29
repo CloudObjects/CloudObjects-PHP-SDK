@@ -93,6 +93,23 @@ class NodeReader {
             return $valueFromNode->getValue();
     }
 
+     /**
+     * Reads a property from a node and converts it into a boolean.
+     * If the property has multiple values only the first is returned.
+     * If no value is found or the node is null, the default is returned.
+     *
+     * @param Node $node The node to work on.
+     * @param string|object $property The property to read.
+     * @param $default The default that is returned if no value for the property exists on the node.
+     * @return bool|null
+     */
+    public function getFirstValueBool(Node $node = null, $property, $default = null) {
+        return (in_array(
+            $this->getFirstValueString($node, $property, $default),
+            [ '1', 'true' ]
+        ));
+    }
+
     /**
      * Reads a property from a node and converts it into a IRI.
      * If the property has multiple values only the first is returned.
@@ -220,6 +237,22 @@ class NodeReader {
                 $output[] = $a->getId();
             else
                 $output[] = $a->getValue();
+
+        return $output;
+    }
+
+    /**
+     * Reads all values from a node and returns them as a boolean array.
+     *
+     * @param Node $node The node to work on.
+     * @param string|object $property The property to read.
+     * @return array<bool>
+     */
+    public function getAllValuesBool(Node $node = null, $property) {
+        $allValues = $this->getAllValuesString($node, $property);
+        $output = [];
+        foreach ($allValues as $a)
+            $output = in_array($a, [ '1', 'true' ]);
 
         return $output;
     }

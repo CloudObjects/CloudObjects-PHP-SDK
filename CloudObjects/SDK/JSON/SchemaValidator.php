@@ -51,13 +51,10 @@ class SchemaValidator {
             Assert::isArray($data);
         elseif ($this->reader->hasType($node, 'json:Object')) {
             Assert::isArrayAccessible($data);
-            foreach ($this->reader->getAllValuesNode($node, 'json:requiresProperty') as $prop) {
+            foreach ($this->reader->getAllValuesNode($node, 'json:hasProperty') as $prop) {
                 $key = $this->reader->getFirstValueString($prop, 'json:hasKey');
-                Assert::keyExists($data, $key);
-                $this->validateAgainstNode($data[$key], $prop);
-            }
-            foreach ($this->reader->getAllValuesNode($node, 'json:supportsOptionalProperty') as $prop) {
-                $key = $this->reader->getFirstValueString($prop, 'json:hasKey');
+                if ($this->reader->getFirstValueBool($prop, 'json:isRequired') == true)
+                    Assert::keyExists($data, $key);
                 if (isset($data[$key]))
                     $this->validateAgainstNode($data[$key], $prop);
             }

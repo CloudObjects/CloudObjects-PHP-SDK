@@ -100,7 +100,7 @@ class SchemaValidatorTest extends \PHPUnit_Framework_TestCase {
 
         $node = $this->graph->createNode();
         $node->setType($this->graph->createNode('coid://json.cloudobjects.io/Object'));
-        $node->setProperty('coid://json.cloudobjects.io/supportsOptionalProperty', $stringNode);
+        $node->setProperty('coid://json.cloudobjects.io/hasProperty', $stringNode);
         $this->schemaValidator->validateAgainstNode([
             'a' => 'A',
             'b' => 'B'
@@ -116,7 +116,7 @@ class SchemaValidatorTest extends \PHPUnit_Framework_TestCase {
 
         $node = $this->graph->createNode();
         $node->setType($this->graph->createNode('coid://json.cloudobjects.io/Object'));
-        $node->setProperty('coid://json.cloudobjects.io/supportsOptionalProperty', $stringNode);
+        $node->setProperty('coid://json.cloudobjects.io/hasProperty', $stringNode);
         $this->schemaValidator->validateAgainstNode([
             'a' => 0,
             'b' => 'B'
@@ -126,11 +126,12 @@ class SchemaValidatorTest extends \PHPUnit_Framework_TestCase {
     public function testObjectWithRequiredProperty() {
         $stringNode = $this->graph->createNode();
         $stringNode->setProperty('coid://json.cloudobjects.io/hasKey', 'a');
+        $stringNode->setProperty('coid://json.cloudobjects.io/isRequired', 'true');
         $stringNode->setType($this->graph->createNode('coid://json.cloudobjects.io/String'));
 
         $node = $this->graph->createNode();
         $node->setType($this->graph->createNode('coid://json.cloudobjects.io/Object'));
-        $node->setProperty('coid://json.cloudobjects.io/requiresProperty', $stringNode);
+        $node->setProperty('coid://json.cloudobjects.io/hasProperty', $stringNode);
         $this->schemaValidator->validateAgainstNode([
             'a' => 'A',
             'b' => 'B'
@@ -142,11 +143,12 @@ class SchemaValidatorTest extends \PHPUnit_Framework_TestCase {
 
         $stringNode = $this->graph->createNode();
         $stringNode->setProperty('coid://json.cloudobjects.io/hasKey', 'a');
+        $stringNode->setProperty('coid://json.cloudobjects.io/isRequired', 'true');
         $stringNode->setType($this->graph->createNode('coid://json.cloudobjects.io/String'));
 
         $node = $this->graph->createNode();
         $node->setType($this->graph->createNode('coid://json.cloudobjects.io/Object'));
-        $node->setProperty('coid://json.cloudobjects.io/requiresProperty', $stringNode);
+        $node->setProperty('coid://json.cloudobjects.io/hasProperty', $stringNode);
         $this->schemaValidator->validateAgainstNode([
             'a' => 0,
             'b' => 'B'
@@ -158,11 +160,12 @@ class SchemaValidatorTest extends \PHPUnit_Framework_TestCase {
 
         $stringNode = $this->graph->createNode();
         $stringNode->setProperty('coid://json.cloudobjects.io/hasKey', 'a');
+        $stringNode->setProperty('coid://json.cloudobjects.io/isRequired', 'true');
         $stringNode->setType($this->graph->createNode('coid://json.cloudobjects.io/String'));
 
         $node = $this->graph->createNode();
         $node->setType($this->graph->createNode('coid://json.cloudobjects.io/Object'));
-        $node->setProperty('coid://json.cloudobjects.io/requiresProperty', $stringNode);
+        $node->setProperty('coid://json.cloudobjects.io/hasProperty', $stringNode);
         $this->schemaValidator->validateAgainstNode([
             'b' => 'B',
             'c' => 'C'
