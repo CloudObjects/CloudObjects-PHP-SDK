@@ -30,7 +30,7 @@ class APIClientFactory {
     private $apiClients = [];
 
     private function configureBearerTokenAuthentication(Node $api, array $clientConfig) {
-        // see also: https://cloudobjects.io/webapi.cloudobjects.io/HTTPBasicAuthentication
+        // see also: https://coid.link/webapis.co-n.net/HTTPBasicAuthentication
 
         $accessToken = $this->reader->getFirstValueString($api, 'oauth2:hasFixedBearerToken');
 
@@ -49,7 +49,7 @@ class APIClientFactory {
     }
 
     private function configureBasicAuthentication(Node $api, array $clientConfig) {
-        // see also: https://cloudobjects.io/webapi.cloudobjects.io/HTTPBasicAuthentication
+        // see also: https://coid.link/webapis.co-n.net/HTTPBasicAuthentication
 
         $username = $this->reader->getFirstValueString($api, 'wa:hasFixedUsername');
         $password = $this->reader->getFirstValueString($api, 'wa:hasFixedPassword');
@@ -77,7 +77,7 @@ class APIClientFactory {
     }
 
     private function configureSharedSecretBasicAuthentication(Node $api, array $clientConfig) {
-        // see also: https://cloudobjects.io/webapi.cloudobjects.io/SharedSecretAuthenticationViaHTTPBasic
+        // see also: https://coid.link/webapis.co-n.net/SharedSecretAuthenticationViaHTTPBasic
 
         $username = COIDParser::fromString($this->namespace->getId())->getHost();
 
@@ -96,7 +96,7 @@ class APIClientFactory {
 
     private function createClient(Node $api, bool $specificClient = false) {        
         if (!$this->reader->hasType($api, 'wa:HTTPEndpoint'))
-            throw new InvalidObjectConfigurationException("The API node must have the type <coid://webapi.cloudobjects.io/HTTPEndpoint>.");
+            throw new InvalidObjectConfigurationException("The API node must have the type <coid://webapis.co-n.net/HTTPEndpoint>.");
         
         $baseUrl = $this->reader->getFirstValueString($api, 'wa:hasBaseURL');
         if (!isset($baseUrl))
@@ -146,8 +146,8 @@ class APIClientFactory {
         $this->reader = new NodeReader([
             'prefixes' => [
                 'co' => 'coid://cloudobjects.io/',
-                'wa' => 'coid://webapi.cloudobjects.io/',
-                'oauth2' => 'coid://oauth2.cloudobjects.io/'
+                'wa' => 'coid://webapis.co-n.net/',
+                'oauth2' => 'coid://oauth2.co-n.net/'
             ]
         ]);
     }

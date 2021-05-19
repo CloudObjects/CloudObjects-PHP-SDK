@@ -231,10 +231,10 @@ class AccountContext {
 	 * @param $service COID of the service
 	 */
 	public function getConnectedAccountForService($service) {
-		$accounts = $this->getDocument()->getGraph()->getNodesByType('coid://accountgateways.cloudobjects.io/Account');
+		$accounts = $this->getDocument()->getGraph()->getNodesByType('coid://aauid.net/Account');
 		foreach ($accounts as $a) {
-			if ($a->getProperty('coid://accountgateways.cloudobjects.io/isForService')
-				&& $a->getProperty('coid://accountgateways.cloudobjects.io/isForService')->getId()==$service) return $a;
+			if ($a->getProperty('coid://aauid.net/isForService')
+				&& $a->getProperty('coid://aauid.net/isForService')->getId()==$service) return $a;
 		}
 		return null;
 	}
@@ -243,7 +243,7 @@ class AccountContext {
 	 * Get all account connections.
 	 */
 	public function getAllAccountConnections() {
-		$connections = $this->getAccount()->getProperty('coid://accountgateways.cloudobjects.io/hasConnection');
+		$connections = $this->getAccount()->getProperty('coid://aauid.net/hasConnection');
 		if (!is_array($connections)) $connections = array($connections);
 		return $connections;
 	}
@@ -254,7 +254,7 @@ class AccountContext {
 	public function getAllConnectedAccounts() {
 		$accounts = array();
 		foreach ($this->getAllAccountConnections() as $ac) {
-			$accounts[] = $ac->getProperty('coid://accountgateways.cloudobjects.io/connectsTo');
+			$accounts[] = $ac->getProperty('coid://aauid.net/connectsTo');
 		}
 		return $accounts;
 	}

@@ -27,7 +27,7 @@ class SchemaValidator {
         $this->objectRetriever = $objectRetriever;
         $this->reader = new NodeReader([
             'prefixes' => [
-                'json' => 'coid://json.cloudobjects.io/'
+                'json' => 'coid://json.co-n.net/'
             ]
         ]);
     }

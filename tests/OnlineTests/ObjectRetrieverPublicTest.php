@@ -42,7 +42,7 @@ class ObjectRetrieverTest extends \PHPUnit_Framework_TestCase {
 
         $this->assertContains('coid://cloudobjects.io/isVisibleTo', $list);
         $this->assertContains('coid://cloudobjects.io/Public', $list);
-        $this->assertNotContains('coid://json.cloudobjects.io/Element', $list);
+        $this->assertNotContains('coid://json.co-n.net/Element', $list);
     }
 
     public function testGetFilteredCOIDList() {

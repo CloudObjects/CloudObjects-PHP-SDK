@@ -23,7 +23,7 @@ class SchemaValidatorPublicTest extends \PHPUnit_Framework_TestCase {
             'locality' => 'Frankfurt',
             'region' => 'Hessen',
             'country-name' => 'Germany'
-        ], new IRI('coid://json.cloudobjects.io/Address'));
+        ], new IRI('coid://json.co-n.net/Address'));
     }
 
     public function testNotAddress() {        
@@ -32,7 +32,7 @@ class SchemaValidatorPublicTest extends \PHPUnit_Framework_TestCase {
         $this->schemaValidator->validateAgainstCOID([
             'region' => 'Hessen',
             'country-name' => 'Germany'
-        ], new IRI('coid://json.cloudobjects.io/Address'));
+        ], new IRI('coid://json.co-n.net/Address'));
     }
 
 }

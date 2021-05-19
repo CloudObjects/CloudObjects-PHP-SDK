@@ -24,7 +24,7 @@ class NodeReaderMockTest extends \PHPUnit_Framework_TestCase {
   private function useRootResourceMock() {
     $this->setMockResponse(new Response(200,
       ['Content-Type' => 'application/ld+json'],
-      '{"@context":{"co":"coid:\/\/cloudobjects.io\/","rdf":"http:\/\/www.w3.org\/1999\/02\/22-rdf-syntax-ns#","agws":"coid:\/\/accountgateways.cloudobjects.io\/","rdfs":"http:\/\/www.w3.org\/2000\/01\/rdf-schema#"},"@id":"coid:\/\/cloudobjects.io","@type":["agws:Service","co:Namespace"],"co:isAtRevision":"6-fbea0c90b2c5e5300e4039ed99be9b2d","co:isVisibleTo":{"@id":"co:Public"},"co:recommendsPrefix":"co","co:wasUpdatedAt":{"@type":"http:\/\/www.w3.org\/2001\/XMLSchema#dateTime","@value":"2017-01-16T17:29:22+00:00"},"rdfs:comment":"The CloudObjects namespace defines the essential objects.","rdfs:label":"CloudObjects"}'));
+      '{"@context":{"co":"coid:\/\/cloudobjects.io\/","rdf":"http:\/\/www.w3.org\/1999\/02\/22-rdf-syntax-ns#","agws":"coid:\/\/aauid.net\/","rdfs":"http:\/\/www.w3.org\/2000\/01\/rdf-schema#"},"@id":"coid:\/\/cloudobjects.io","@type":["agws:Service","co:Namespace"],"co:isAtRevision":"6-fbea0c90b2c5e5300e4039ed99be9b2d","co:isVisibleTo":{"@id":"co:Public"},"co:recommendsPrefix":"co","co:wasUpdatedAt":{"@type":"http:\/\/www.w3.org\/2001\/XMLSchema#dateTime","@value":"2017-01-16T17:29:22+00:00"},"rdfs:comment":"The CloudObjects namespace defines the essential objects.","rdfs:label":"CloudObjects"}'));
   }
 
   protected function setUp() {
