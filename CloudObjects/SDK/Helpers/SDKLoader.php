@@ -47,8 +47,8 @@ class SDKLoader {
             if (is_a($classname, 'Aws\AwsClient', true)) {
                 $class = new $classname(array_merge($options, [
                     'credentials' => [
-                        'key' => $this->reader->getFirstValueString($nsNode, 'coid://amazonws.cloudobjects.io/accessKeyId'),
-                        'secret' => $this->reader->getFirstValueString($nsNode, 'coid://amazonws.cloudobjects.io/secretAccessKey')
+                        'key' => $this->reader->getFirstValueString($nsNode, 'coid://aws.3rd-party.co/accessKeyId'),
+                        'secret' => $this->reader->getFirstValueString($nsNode, 'coid://aws.3rd-party.co/secretAccessKey')
                     ]
                 ]));
             } else {
@@ -57,17 +57,17 @@ class SDKLoader {
                     // --- stream (https://getstream.io/) ---
                     case "GetStream\Stream\Client":
                         $class = new $classname(
-                            $this->reader->getFirstValueString($nsNode, 'coid://getstreamio.cloudobjects.io/key'),
-                            $this->reader->getFirstValueString($nsNode, 'coid://getstreamio.cloudobjects.io/secret')
+                            $this->reader->getFirstValueString($nsNode, 'coid://getstreamio.3rd-party.co/key'),
+                            $this->reader->getFirstValueString($nsNode, 'coid://getstreamio.3rd-party.co/secret')
                         );
                         break;
 
                     // --- Pusher (https://pusher.com/) ---
                     case "Pusher":
                         $class = new $classname(
-                            $this->reader->getFirstValueString($nsNode, 'coid://pusher.cloudobjects.io/key'),
-                            $this->reader->getFirstValueString($nsNode, 'coid://pusher.cloudobjects.io/secret'),
-                            $this->reader->getFirstValueString($nsNode, 'coid://pusher.cloudobjects.io/appId'),
+                            $this->reader->getFirstValueString($nsNode, 'coid://pusher.3rd-party.co/key'),
+                            $this->reader->getFirstValueString($nsNode, 'coid://pusher.3rd-party.co/secret'),
+                            $this->reader->getFirstValueString($nsNode, 'coid://pusher.3rd-party.co/appId'),
                             $options
                     );
                     break;
