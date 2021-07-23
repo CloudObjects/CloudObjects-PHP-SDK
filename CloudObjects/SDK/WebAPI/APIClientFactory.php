@@ -29,6 +29,39 @@ class APIClientFactory {
     private $reader;
     private $apiClients = [];
 
+    private function configureAPIKeyAuthentication(Node $api, array $clientConfig) {
+        // see also: https://coid.link/webapis.co-n.net/APIKeyAuthentication
+
+        $apiKey = $this->reader->getFirstValueString($api, 'wa:hasFixedAPIKey');
+
+        if (!isset($apiKey)) {
+            $apiKeyProperty = $this->reader->getFirstValueString($api, 'wa:usesAPIKeyFrom');
+            if (!isset($apiKeyProperty))
+                throw new InvalidObjectConfigurationException("An API must have either a fixed API key or a defined API key property.");
+            $apiKey = $this->reader->getFirstValueString($this->namespace, $apiKeyProperty);
+            if (!isset($apiKey))
+                throw new InvalidObjectConfigurationException("The namespace does not have a value for <".$apiKeyProperty.">.");
+        }
+        
+        $parameter = $this->reader->getFirstValueNode($api, 'wa:usesAuthenticationParameter');
+
+        if (!isset($parameter) || !$this->reader->hasProperty($parameter, 'wa:hasKey'))
+            throw new InvalidObjectConfigurationException("The API does not declare a parameter for inserting the API key.");
+
+        $parameterName = $this->reader->getFirstValueString($parameter, 'wa:hasKey');
+
+        if ($this->reader->hasType($parameter, 'wa:HeaderParameter'))
+            $clientConfig['headers'][$parameterName] = $apiKey;
+
+        elseif ($this->reader->hasType($parameter, 'wa:QueryParameter'))
+            $clientConfig['query'][$parameterName] = $apiKey;
+
+        else
+            throw new InvalidObjectConfigurationException("The authentication parameter must be either <wa:HeaderParameter> or <wa:QueryParameter>.");
+
+        return $clientConfig;
+    }
+
     private function configureBearerTokenAuthentication(Node $api, array $clientConfig) {
         // see also: https://coid.link/webapis.co-n.net/HTTPBasicAuthentication
 
@@ -109,6 +142,10 @@ class APIClientFactory {
         ];
 
         if ($this->reader->hasPropertyValue($api, 'wa:supportsAuthenticationMechanism',
+                'wa:APIKeyAuthentication'))
+            $clientConfig = $this->configureAPIKeyAuthentication($api, $clientConfig);
+
+        elseif ($this->reader->hasPropertyValue($api, 'wa:supportsAuthenticationMechanism',
                 'oauth2:FixedBearerTokenAuthentication'))
             $clientConfig = $this->configureBearerTokenAuthentication($api, $clientConfig);
 
@@ -162,8 +199,10 @@ class APIClientFactory {
     public function getClientWithCOID(IRI $apiCoid, bool $specificClient = false) {
         $idString = (string)$apiCoid.(string)$specificClient;
         if (!isset($this->apiClients[$idString])) {
-            $this->apiClients[$idString] = $this->createClient(
-                $this->objectRetriever->getObject($apiCoid), $specificClient);
+            $object = $this->objectRetriever->getObject($apiCoid);
+            if (!isset($object))
+                throw new CoreAPIException("Could not retrieve API <".(string)$apiCoid.">.");
+            $this->apiClients[$idString] = $this->createClient($object, $specificClient);
         }
 
         return $this->apiClients[$idString];
