@@ -10,7 +10,8 @@ use Exception;
 use ML\IRI\IRI;
 use ML\JsonLD\Node;
 use CloudObjects\SDK\NodeReader;
-use GuzzleHttp\Client;
+use GuzzleHttp\Client, GuzzleHttp\HandlerStack, GuzzleHttp\Middleware;
+use Psr\Http\Message\RequestInterface;
 use CloudObjects\SDK\COIDParser, CloudObjects\SDK\ObjectRetriever;
 use CloudObjects\SDK\Exceptions\InvalidObjectConfigurationException,
     CloudObjects\SDK\Exceptions\CoreAPIException;
@@ -53,8 +54,20 @@ class APIClientFactory {
         if ($this->reader->hasType($parameter, 'wa:HeaderParameter'))
             $clientConfig['headers'][$parameterName] = $apiKey;
 
-        elseif ($this->reader->hasType($parameter, 'wa:QueryParameter'))
-            $clientConfig['query'][$parameterName] = $apiKey;
+        elseif ($this->reader->hasType($parameter, 'wa:QueryParameter')) {
+            // Guzzle currently doesn't merge query strings from default options and the request itself,
+            // therefore we're implementing this behavior with a custom middleware
+            $handler = HandlerStack::create();
+            $handler->push(Middleware::mapRequest(function (RequestInterface $request) use ($parameterName, $apiKey) {
+                $uri = $request->getUri();
+                $uri = $uri->withQuery(
+                    (!empty($uri->getQuery()) ? $uri->getQuery().'&' : '')
+                    . urlencode($parameterName).'='.urlencode($apiKey)
+                );
+                return $request->withUri($uri);                
+            }));
+            $clientConfig['handler'] = $handler;
+        }            
 
         else
             throw new InvalidObjectConfigurationException("The authentication parameter must be either <wa:HeaderParameter> or <wa:QueryParameter>.");
