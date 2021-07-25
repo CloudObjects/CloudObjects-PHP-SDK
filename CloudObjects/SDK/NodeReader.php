@@ -93,7 +93,7 @@ class NodeReader {
             return $valueFromNode->getValue();
     }
 
-     /**
+    /**
      * Reads a property from a node and converts it into a boolean.
      * If the property has multiple values only the first is returned.
      * If no value is found or the node is null, the default is returned.
@@ -108,6 +108,42 @@ class NodeReader {
             $this->getFirstValueString($node, $property, $default),
             [ '1', 'true' ]
         ));
+    }
+
+    /**
+     * Reads a property from a node and converts it into an integer.
+     * If the property has multiple values only the first is returned.
+     * If no value is found or the node is null, the default is returned.
+     *
+     * @param Node $node The node to work on.
+     * @param string|object $property The property to read.
+     * @param $default The default that is returned if no value for the property exists on the node.
+     * @return int|null
+     */
+    public function getFirstValueInt(Node $node = null, $property, $default = null) {
+        $value = $this->getFirstValueString($node, $property);
+        if (is_numeric($value))
+            return (int)($value);
+
+        return $default;
+    }
+
+    /**
+     * Reads a property from a node and converts it into an float.
+     * If the property has multiple values only the first is returned.
+     * If no value is found or the node is null, the default is returned.
+     *
+     * @param Node $node The node to work on.
+     * @param string|object $property The property to read.
+     * @param $default The default that is returned if no value for the property exists on the node.
+     * @return float|null
+     */
+    public function getFirstValueFloat(Node $node = null, $property, $default = null) {
+        $value = $this->getFirstValueString($node, $property);
+        if (is_numeric($value))
+            return (float)($value);
+
+        return $default;
     }
 
     /**
@@ -253,6 +289,38 @@ class NodeReader {
         $output = [];
         foreach ($allValues as $a)
             $output = in_array($a, [ '1', 'true' ]);
+
+        return $output;
+    }
+
+    /**
+     * Reads all values from a node and returns them as an integer array.
+     *
+     * @param Node $node The node to work on.
+     * @param string|object $property The property to read.
+     * @return array<bool>
+     */
+    public function getAllValuesInt(Node $node = null, $property) {
+        $allValues = $this->getAllValuesString($node, $property);
+        $output = [];
+        foreach ($allValues as $a)
+            $output = (int)$a;
+
+        return $output;
+    }
+
+    /**
+     * Reads all values from a node and returns them as a float array.
+     *
+     * @param Node $node The node to work on.
+     * @param string|object $property The property to read.
+     * @return array<bool>
+     */
+    public function getAllValuesFloat(Node $node = null, $property) {
+        $allValues = $this->getAllValuesString($node, $property);
+        $output = [];
+        foreach ($allValues as $a)
+            $output = (float)$a;
 
         return $output;
     }
