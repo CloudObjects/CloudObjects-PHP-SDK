@@ -11,6 +11,7 @@ use ML\IRI\IRI, ML\JsonLD\JsonLD;
 use Doctrine\Common\Cache\RedisCache;
 use Psr\Log\LoggerInterface, Psr\Log\LoggerAwareTrait;
 use GuzzleHttp\ClientInterface, GuzzleHttp\Client, GuzzleHttp\HandlerStack;
+use GuzzleHttp\Exception\RequestException;
 use Kevinrob\GuzzleCache\CacheMiddleware, Kevinrob\GuzzleCache\Storage\DoctrineCacheStorage;
 use Kevinrob\GuzzleCache\Strategy\PrivateCacheStrategy;
 use CloudObjects\SDK\Exceptions\CoreAPIException;
@@ -203,8 +204,11 @@ class ObjectRetriever {
 				$object = (string)$response->getBody();
 				$this->putIntoCache($uriString, $object, $this->options['cache_ttl']);
 				$this->logInfoWithTime('Fetched <'.$uriString.'> from Core API ['.$response->getStatusCode().'].', $ts);
-			} catch (Exception $e) {
-				$this->logInfoWithTime('Object <'.$uriString.'> not found in Core API ['.$e->getResponse()->getStatusCode().'].', $ts);
+			} catch (RequestException $e) {
+				if ($e->hasResponse())
+					$this->logInfoWithTime('Object <'.$uriString.'> not found in Core API ['.$e->getResponse()->getStatusCode().'].', $ts);
+				else
+					$this->logInfoWithTime('Object <'.$uriString.'> could not be retrieved from Core API.', $ts);
 				return null;
 			}
 		}
